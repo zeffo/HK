@@ -1,0 +1,300 @@
+Using proactor: IocpProactor
+Get address info discord.com:443, type=<SocketKind.SOCK_STREAM: 1>, flags=<AddressInfo.AI_ADDRCONFIG: 1024>
+Getting address info discord.com:443, type=<SocketKind.SOCK_STREAM: 1>, flags=<AddressInfo.AI_ADDRCONFIG: 1024> took 0.000ms: [(<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_STREAM: 1>, 0, '', ('162.159.135.232', 443)), (<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_STREAM: 1>, 0, '', ('162.159.136.232', 443)), (<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_STREAM: 1>, 0, '', ('162.159.128.233', 443)), (<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_STREAM: 1>, 0, '', ('162.159.137.232', 443)), (<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_STREAM: 1>, 0, '', ('162.159.138.232', 443))]
+<asyncio.sslproto.SSLProtocol object at 0x000001889C938400> starts SSL handshake
+<asyncio.sslproto.SSLProtocol object at 0x000001889C938400>: SSL handshake took 78.0 ms
+<asyncio.TransportSocket fd=900, family=AddressFamily.AF_INET, type=SocketKind.SOCK_STREAM, proto=6, laddr=('10.0.0.2', 52209), raddr=('162.159.135.232', 443)> connected to 162.159.135.232:443: (<asyncio.sslproto._SSLProtocolTransport object at 0x000001889E582460>, <aiohttp.client_proto.ResponseHandler object at 0x000001889C97DE20>)
+Get address info gateway.discord.gg:443, type=<SocketKind.SOCK_STREAM: 1>, flags=<AddressInfo.AI_ADDRCONFIG: 1024>
+Getting address info gateway.discord.gg:443, type=<SocketKind.SOCK_STREAM: 1>, flags=<AddressInfo.AI_ADDRCONFIG: 1024> took 16.000ms: [(<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_STREAM: 1>, 0, '', ('162.159.133.234', 443)), (<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_STREAM: 1>, 0, '', ('162.159.136.234', 443)), (<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_STREAM: 1>, 0, '', ('162.159.135.234', 443)), (<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_STREAM: 1>, 0, '', ('162.159.134.234', 443)), (<AddressFamily.AF_INET: 2>, <SocketKind.SOCK_STREAM: 1>, 0, '', ('162.159.130.234', 443))]
+<asyncio.sslproto.SSLProtocol object at 0x000001889C914160> starts SSL handshake
+<asyncio.sslproto.SSLProtocol object at 0x000001889C914160>: SSL handshake took 46.0 ms
+<asyncio.TransportSocket fd=992, family=AddressFamily.AF_INET, type=SocketKind.SOCK_STREAM, proto=6, laddr=('10.0.0.2', 52210), raddr=('162.159.133.234', 443)> connected to 162.159.133.234:443: (<asyncio.sslproto._SSLProtocolTransport object at 0x000001889E5EFDC0>, <aiohttp.client_proto.ResponseHandler object at 0x000001889E599FA0>)
+<_ProactorSocketTransport fd=900> received EOF
+<asyncio.sslproto.SSLProtocol object at 0x000001889C938400> received EOF
+Close <ProactorEventLoop running=False closed=False debug=True>
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x0000016966028FA0>
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x0000028F7F9B5340>
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x0000019016136100>
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x00000136D0156220>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-56' coro=<Event.wait() done, defined at C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\asyncio\locks.py:296> wait_for=<Future pending cb=[<TaskWakeupMethWrapper object at 0x000001E30AA48250>()]>>
+Task exception was never retrieved
+future: <Task finished name='Task-218' coro=<Queue.next() done, defined at D:\Python\10dbot\ext\music.py:91> exception=AttributeError("'Queue' object has no attribute 'isempty'")>
+Traceback (most recent call last):
+  File "D:\Python\10dbot\ext\music.py", line 92, in next
+    if self.isempty():
+AttributeError: 'Queue' object has no attribute 'isempty'
+Task exception was never retrieved
+future: <Task finished name='Task-198' coro=<Queue.next() done, defined at D:\Python\10dbot\ext\music.py:91> exception=AttributeError("'Queue' object has no attribute 'isempty'")>
+Traceback (most recent call last):
+  File "D:\Python\10dbot\ext\music.py", line 92, in next
+    if self.isempty():
+AttributeError: 'Queue' object has no attribute 'isempty'
+Task exception was never retrieved
+future: <Task finished name='Task-244' coro=<Queue.next() done, defined at D:\Python\10dbot\ext\music.py:91> exception=AttributeError("'Queue' object has no attribute 'isempty'")>
+Traceback (most recent call last):
+  File "D:\Python\10dbot\ext\music.py", line 92, in next
+    if self.isempty():
+AttributeError: 'Queue' object has no attribute 'isempty'
+Task exception was never retrieved
+future: <Task finished name='Task-88' coro=<Queue.next() done, defined at D:\Python\10dbot\ext\music.py:91> exception=AttributeError("'Queue' object has no attribute 'isempty'")>
+Traceback (most recent call last):
+  File "D:\Python\10dbot\ext\music.py", line 92, in next
+    if self.isempty():
+AttributeError: 'Queue' object has no attribute 'isempty'
+Task exception was never retrieved
+future: <Task finished name='Task-80' coro=<Queue.next() done, defined at D:\Python\10dbot\ext\music.py:91> exception=ClientException('Already playing audio.')>
+Traceback (most recent call last):
+  File "D:\Python\10dbot\ext\music.py", line 95, in next
+    await self.play(await self.get())
+  File "D:\Python\10dbot\ext\music.py", line 81, in play
+    self.ctx.voice_client.play(stream, after=lambda _: self.ctx.bot.loop.create_task(self.next()))
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\voice_client.py", line 592, in play
+    raise ClientException('Already playing audio.')
+discord.errors.ClientException: Already playing audio.
+Task exception was never retrieved
+future: <Task finished name='Task-88' coro=<Queue.next() done, defined at D:\Python\10dbot\ext\music.py:91> exception=ClientException('Already playing audio.')>
+Traceback (most recent call last):
+  File "D:\Python\10dbot\ext\music.py", line 96, in next
+    await self.play(await self.get())
+  File "D:\Python\10dbot\ext\music.py", line 81, in play
+    self.ctx.voice_client.play(stream, after=lambda _: self.ctx.bot.loop.create_task(self.next()))
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\voice_client.py", line 592, in play
+    raise ClientException('Already playing audio.')
+discord.errors.ClientException: Already playing audio.
+_GatheringFuture exception was never retrieved
+future: <_GatheringFuture finished exception=ClientException('Already playing audio.')>
+Traceback (most recent call last):
+  File "D:\Python\10dbot\ext\music.py", line 187, in add
+    await self.next()
+  File "D:\Python\10dbot\ext\music.py", line 176, in next
+    await self.play(await self.get())
+  File "D:\Python\10dbot\ext\music.py", line 167, in play
+    self.ctx.voice_client.play(stream, after=lambda _: self.ctx.bot.loop.create_task(self.next()))
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\voice_client.py", line 592, in play
+    raise ClientException('Already playing audio.')
+discord.errors.ClientException: Already playing audio.
+_GatheringFuture exception was never retrieved
+future: <_GatheringFuture finished exception=ClientException('Already playing audio.')>
+Traceback (most recent call last):
+  File "D:\Python\10dbot\ext\music.py", line 187, in add
+    await self.next()
+  File "D:\Python\10dbot\ext\music.py", line 176, in next
+    await self.play(await self.get())
+  File "D:\Python\10dbot\ext\music.py", line 167, in play
+    self.ctx.voice_client.play(stream, after=lambda _: self.ctx.bot.loop.create_task(self.next()))
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\voice_client.py", line 592, in play
+    raise ClientException('Already playing audio.')
+discord.errors.ClientException: Already playing audio.
+Task exception was never retrieved
+future: <Task finished name='discord-ui-view-timeout-b4f42cb16e5caa7c9ba37d6fee5a6071' coro=<_repl_coroutine.<locals>.ConfirmButtonBuild.on_timeout() done, defined at <repl>:21> exception=NameError("name 'functions' is not defined")>
+Traceback (most recent call last):
+  File "<repl>", line 23, in on_timeout
+NameError: name 'functions' is not defined
+Task exception was never retrieved
+future: <Task finished name='Task-2551' coro=<Queue.next() done, defined at D:\Python\10dbot\ext\music.py:172> exception=AttributeError("'NoneType' object has no attribute 'url_https'")>
+Traceback (most recent call last):
+  File "D:\Python\10dbot\ext\music.py", line 176, in next
+    await self.play(await self.get())
+  File "D:\Python\10dbot\ext\music.py", line 165, in play
+    source = FFmpegPCMAudio(await track.audio(), **FFMPEG_OPTIONS)
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\concurrent\futures\thread.py", line 57, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Python\10dbot\ext\music.py", line 114, in audio
+    return self.pafy.getbestaudio().url_https
+AttributeError: 'NoneType' object has no attribute 'url_https'
+Task exception was never retrieved
+future: <Task finished name='Task-11974' coro=<Queue.next() done, defined at D:\Python\10dbot\ext\music.py:175> exception=AttributeError("'NoneType' object has no attribute 'is_playing'")>
+Traceback (most recent call last):
+  File "D:\Python\10dbot\ext\music.py", line 176, in next
+    if self.empty() or self.ctx.voice_client.is_playing():
+AttributeError: 'NoneType' object has no attribute 'is_playing'
+Task was destroyed but it is pending!
+task: <Task pending name='Task-3667' coro=<Event.wait() running at C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\asyncio\locks.py:309> wait_for=<Future pending cb=[<TaskWakeupMethWrapper object at 0x00000276894724C0>()]>>
+Task was destroyed but it is pending!
+task: <Task pending name='Task-3668' coro=<Event.wait() running at C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\asyncio\locks.py:309> wait_for=<Future pending cb=[<TaskWakeupMethWrapper object at 0x0000027689472E20>()]>>
+Task exception was never retrieved
+future: <Task finished name='Task-1910' coro=<Queue.next() done, defined at D:\Python\10dbot\ext\music.py:169> exception=ClientException('Already playing audio.')>
+Traceback (most recent call last):
+  File "D:\Python\10dbot\ext\music.py", line 173, in next
+    await self.play(await self.get())
+  File "D:\Python\10dbot\ext\music.py", line 164, in play
+    self.ctx.voice_client.play(stream, after=lambda _: self.ctx.bot.loop.create_task(self.next()))
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\voice_client.py", line 592, in play
+    raise ClientException('Already playing audio.')
+discord.errors.ClientException: Already playing audio.
+Task exception was never retrieved
+future: <Task finished name='Task-1924' coro=<Queue.next() done, defined at D:\Python\10dbot\ext\music.py:169> exception=ClientException('Already playing audio.')>
+Traceback (most recent call last):
+  File "D:\Python\10dbot\ext\music.py", line 173, in next
+    await self.play(await self.get())
+  File "D:\Python\10dbot\ext\music.py", line 164, in play
+    self.ctx.voice_client.play(stream, after=lambda _: self.ctx.bot.loop.create_task(self.next()))
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\voice_client.py", line 592, in play
+    raise ClientException('Already playing audio.')
+discord.errors.ClientException: Already playing audio.
+Task exception was never retrieved
+future: <Task finished name='Task-2237' coro=<Queue.next() done, defined at D:\Python\10dbot\ext\music.py:169> exception=OSError('ERROR: Video unavailable\nThis video is not available')>
+Traceback (most recent call last):
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\youtube_dl\YoutubeDL.py", line 815, in wrapper
+    return func(self, *args, **kwargs)
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\youtube_dl\YoutubeDL.py", line 836, in __extract_info
+    ie_result = ie.extract(url)
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\youtube_dl\extractor\common.py", line 534, in extract
+    ie_result = self._real_extract(url)
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\youtube_dl\extractor\youtube.py", line 1713, in _real_extract
+    raise ExtractorError(reason, expected=True)
+youtube_dl.utils.ExtractorError: Video unavailable
+This video is not available
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\pafy\backend_youtube_dl.py", line 40, in _fetch_basic
+    self._ydl_info = ydl.extract_info(self.videoid, download=False)
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\youtube_dl\YoutubeDL.py", line 808, in extract_info
+    return self.__extract_info(url, ie, download, extra_info, process)
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\youtube_dl\YoutubeDL.py", line 824, in wrapper
+    self.report_error(compat_str(e), e.format_traceback())
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\youtube_dl\YoutubeDL.py", line 628, in report_error
+    self.trouble(error_message, tb)
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\youtube_dl\YoutubeDL.py", line 598, in trouble
+    raise DownloadError(message, exc_info)
+youtube_dl.utils.DownloadError: ERROR: Video unavailable
+This video is not available
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Python\10dbot\ext\music.py", line 173, in next
+    await self.play(await self.get())
+  File "D:\Python\10dbot\ext\music.py", line 162, in play
+    source = FFmpegPCMAudio(await track.audio(), **FFMPEG_OPTIONS)
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\concurrent\futures\thread.py", line 57, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Python\10dbot\ext\music.py", line 113, in audio
+    return self.pafy.getbestaudio().url_https
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\pafy\backend_shared.py", line 386, in getbestaudio
+    if not self.audiostreams:
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\pafy\backend_shared.py", line 176, in audiostreams
+    self._process_streams()
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\pafy\backend_youtube_dl.py", line 79, in _process_streams
+    self._fetch_basic()
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\pafy\backend_youtube_dl.py", line 43, in _fetch_basic
+    raise IOError(str(e).replace('YouTube said', 'Youtube says'))
+OSError: ERROR: Video unavailable
+This video is not available
+Task exception was never retrieved
+future: <Task finished name='Task-1' coro=<start() done, defined at .\bot.py:46> exception=ExtensionFailed("Extension 'ext.typeracer' raised an error: SyntaxError: f-string expression part cannot include a backslash (typeracer.py, line 92)")>
+Traceback (most recent call last):
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\ext\commands\bot.py", line 660, in _load_from_module_spec
+    spec.loader.exec_module(lib)  # type: ignore
+  File "<frozen importlib._bootstrap_external>", line 779, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 916, in get_code
+  File "<frozen importlib._bootstrap_external>", line 846, in source_to_code
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "D:\Python\10dbot\ext\typeracer.py", line 92
+    await interaction.response.edit_message(content=f"```md\n{'\n- '.join(self.players)}```")
+                                                    ^
+SyntaxError: f-string expression part cannot include a backslash
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File ".\bot.py", line 52, in start
+    bot.load_extension(f'ext.{ext[:-3]}')
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\ext\commands\bot.py", line 732, in load_extension
+    self._load_from_module_spec(spec, name)
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\ext\commands\bot.py", line 663, in _load_from_module_spec
+    raise errors.ExtensionFailed(key, e) from e
+discord.ext.commands.errors.ExtensionFailed: Extension 'ext.typeracer' raised an error: SyntaxError: f-string expression part cannot include a backslash (typeracer.py, line 92)
+Task exception was never retrieved
+future: <Task finished name='Task-1' coro=<start() done, defined at .\bot.py:46> exception=ExtensionFailed("Extension 'ext.typeracer' raised an error: SyntaxError: f-string expression part cannot include a backslash (typeracer.py, line 92)")>
+Traceback (most recent call last):
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\ext\commands\bot.py", line 660, in _load_from_module_spec
+    spec.loader.exec_module(lib)  # type: ignore
+  File "<frozen importlib._bootstrap_external>", line 779, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 916, in get_code
+  File "<frozen importlib._bootstrap_external>", line 846, in source_to_code
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "D:\Python\10dbot\ext\typeracer.py", line 92
+    await interaction.response.edit_message(content=f"```md\n{'\n- '.join(self.players)}```")
+                                                    ^
+SyntaxError: f-string expression part cannot include a backslash
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File ".\bot.py", line 52, in start
+    bot.load_extension(f'ext.{ext[:-3]}')
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\ext\commands\bot.py", line 732, in load_extension
+    self._load_from_module_spec(spec, name)
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\ext\commands\bot.py", line 663, in _load_from_module_spec
+    raise errors.ExtensionFailed(key, e) from e
+discord.ext.commands.errors.ExtensionFailed: Extension 'ext.typeracer' raised an error: SyntaxError: f-string expression part cannot include a backslash (typeracer.py, line 92)
+Task exception was never retrieved
+future: <Task finished name='Task-1' coro=<start() done, defined at .\bot.py:46> exception=ExtensionFailed("Extension 'ext.typeracer' raised an error: SyntaxError: f-string expression part cannot include a backslash (typeracer.py, line 92)")>
+Traceback (most recent call last):
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\ext\commands\bot.py", line 660, in _load_from_module_spec
+    spec.loader.exec_module(lib)  # type: ignore
+  File "<frozen importlib._bootstrap_external>", line 779, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 916, in get_code
+  File "<frozen importlib._bootstrap_external>", line 846, in source_to_code
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "D:\Python\10dbot\ext\typeracer.py", line 92
+    await interaction.response.edit_message(content=f"```md\n{'\n- '.join(self.players)}```")
+                                                    ^
+SyntaxError: f-string expression part cannot include a backslash
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File ".\bot.py", line 52, in start
+    bot.load_extension(f'ext.{ext[:-3]}')
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\ext\commands\bot.py", line 732, in load_extension
+    self._load_from_module_spec(spec, name)
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\ext\commands\bot.py", line 663, in _load_from_module_spec
+    raise errors.ExtensionFailed(key, e) from e
+discord.ext.commands.errors.ExtensionFailed: Extension 'ext.typeracer' raised an error: SyntaxError: f-string expression part cannot include a backslash (typeracer.py, line 92)
+Task exception was never retrieved
+future: <Task finished name='Task-1' coro=<start() done, defined at .\bot.py:46> exception=ExtensionFailed("Extension 'ext.typeracer' raised an error: SyntaxError: f-string expression part cannot include a backslash (typeracer.py, line 92)")>
+Traceback (most recent call last):
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\ext\commands\bot.py", line 660, in _load_from_module_spec
+    spec.loader.exec_module(lib)  # type: ignore
+  File "<frozen importlib._bootstrap_external>", line 779, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 916, in get_code
+  File "<frozen importlib._bootstrap_external>", line 846, in source_to_code
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "D:\Python\10dbot\ext\typeracer.py", line 92
+    await interaction.response.edit_message(content=f"```md\n{'\n- '.join(self.players)}```")
+                                                    ^
+SyntaxError: f-string expression part cannot include a backslash
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File ".\bot.py", line 56, in start
+    raise e
+  File ".\bot.py", line 53, in start
+    bot.load_extension(f'ext.{ext[:-3]}')
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\ext\commands\bot.py", line 732, in load_extension
+    self._load_from_module_spec(spec, name)
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\ext\commands\bot.py", line 663, in _load_from_module_spec
+    raise errors.ExtensionFailed(key, e) from e
+discord.ext.commands.errors.ExtensionFailed: Extension 'ext.typeracer' raised an error: SyntaxError: f-string expression part cannot include a backslash (typeracer.py, line 92)
+Task exception was never retrieved
+future: <Task finished name='Task-1' coro=<start() done, defined at .\bot.py:45> exception=RuntimeError('This event loop is already running')>
+Traceback (most recent call last):
+  File ".\bot.py", line 56, in start
+    bot.ipc.start()
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\site-packages\discord\ext\ipc\server.py", line 262, in start
+    self.loop.run_until_complete(self.__start(self._multicast_server, self.multicast_port))
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\asyncio\base_events.py", line 592, in run_until_complete
+    self._check_running()
+  File "C:\Users\Aman\AppData\Local\Programs\Python\Python38\lib\asyncio\base_events.py", line 552, in _check_running
+    raise RuntimeError('This event loop is already running')
+RuntimeError: This event loop is already running
