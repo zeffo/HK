@@ -73,6 +73,6 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         loop.stop()
         print("Preparing to exit...")
-        run(['git', 'pull', '-f', 'upstream', 'master'])
+        run(['git', 'pull', '-f', 'origin', 'master'])
         run([sys.executable, 'bot.py'])
         print("Finished.")
