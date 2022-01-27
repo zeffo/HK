@@ -61,7 +61,7 @@ async def info(ctx):
 async def update(ctx):
     await ctx.send("Preparing to update...")
     if __name__ == '__main__':
-        run(['git', 'pull', '-f', 'origin', 'master'])
+        run(['git', 'pull', 'origin', 'master'])
         run([sys.executable, 'bot.py'])
         exit()
 
