@@ -17,7 +17,7 @@ class Bot(commands.Bot):
         super().__init__(*args, **kwargs)
 
     async def start(self):
-        self.pool = await asyncpg.create_pool(host=getenv('DB_HOST'), port=getenv('DB_PORT'), user=getenv('DB_USER'), password=getenv('DB_PASSWORD'), database=getenv('DATABASE'))
+        self.pool = await asyncpg.create_pool(getenv('DB_URI'))
         self.cs = aiohttp.ClientSession()
 
         for ext in listdir('ext'):
