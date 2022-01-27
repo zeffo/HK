@@ -4,7 +4,7 @@ from discord.embeds import Embed
 from discord.enums import ButtonStyle
 from discord.ui import View, button, select
 from discord.errors import Forbidden, HTTPException, NotFound
-from discord.ext import commands, flags
+from discord.ext import commands
 from typing import List, Union, Optional, Tuple
 from PIL import Image, ImageOps, ImageChops, UnidentifiedImageError, ImageFilter, ImageEnhance
 from io import BytesIO
@@ -409,8 +409,6 @@ class Images(commands.Cog):
             await ctx.send("Could not parse the given image!")
         elif isinstance(error, BadColourArgument):
             await ctx.send("Couldn't find that color! Try using a hexadecimal value instead.")
-        elif isinstance(error, flags.ArgumentParsingError):
-            await ctx.send("Couldn't parse those arguments... did you forget a `-`?")
         else:
             raise error
 
@@ -469,14 +467,6 @@ class Images(commands.Cog):
     @commands.command(description="Applies a gaussian blur on the given radius.")
     async def gaussianblur(self, ctx, target: MODELS, radius: int):
         await self.auto(ctx, radius)
-
-    @flags.add_flag("-brightness", type=float, default=1.0)
-    @flags.add_flag("-color", type=float, default=1.0)
-    @flags.add_flag("-sharpness", type=float, default=1.0)
-    @flags.add_flag("-contrast", type=float, default=1.0)
-    @flags.command(description="Adjusts an image with the given parameters (brightness, contrast, color, sharpness). The values given should be floats (1.0, 1.5, etc).")
-    async def adjust(self, ctx, target: MODELS, **flags):
-        await self.auto(ctx, **flags)
 
     @commands.command(aliases=['removebackground'], description="Removes the background of an image. This is experimental!")
     async def removebg(self, ctx, target: MODELS):
