@@ -8,6 +8,10 @@ from dotenv import load_dotenv
 from datetime import datetime
 import asyncpg
 import aiohttp
+from subprocess import Popen, run
+import sys
+
+from sympy import EX
 
 
 class Bot(commands.Bot):
@@ -55,7 +59,10 @@ async def info(ctx):
     embed = discord.Embed(title='HK-69', description='Made by Zeffo#0393')
     await ctx.send(embed=embed)
 
-
+@bot.command()
+@commands.is_owner()
+async def update(ctx):
+    raise KeyboardInterrupt
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
@@ -64,8 +71,8 @@ if __name__ == '__main__':
         loop.create_task(bot.start())
         loop.run_forever()
     except KeyboardInterrupt:
-        loop.create_task(bot.close())
         loop.stop()
         print("Preparing to exit...")
-
-print("Exited successfully.")
+        run(['git', 'pull', '-f', 'upstream', 'master'])
+        run([sys.executable, 'bot.py'])
+        print("Finished.")
