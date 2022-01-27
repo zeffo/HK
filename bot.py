@@ -17,7 +17,7 @@ class Bot(commands.Bot):
         super().__init__(*args, **kwargs)
 
     async def start(self):
-        self.pool = await asyncpg.create_pool(host='127.0.0.1', port=5432, user='postgres', password=getenv('DB_PASSWORD'), database='HK')
+        self.pool = await asyncpg.create_pool(host=getenv('DB_HOST'), port=getenv('DB_PORT'), user=getenv('DB_USER'), password=getenv('DB_PASSWORD'), database=getenv('DATABASE'))
         self.cs = aiohttp.ClientSession()
 
         for ext in listdir('ext'):
