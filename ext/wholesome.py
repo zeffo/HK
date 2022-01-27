@@ -4,14 +4,10 @@ import random
 from concurrent.futures import ProcessPoolExecutor
 
 
-def cpu():
-    return 999**99999
-
 class Wholesome(commands.Cog):
     """ Commands that will warm your heart. """
     def __init__(self, bot):
         self.bot = bot
-        self.executor = ProcessPoolExecutor()
 
     @commands.command()
     async def hug(self, ctx, user: discord.User):
@@ -27,17 +23,6 @@ class Wholesome(commands.Cog):
             await ctx.send('Ping the person you want to hug!', delete_after=3)
         else:
             raise error
-
-    @commands.command()
-    async def tes(self, ctx):
-        res = self.bot.loop.run_in_executor(self.executor, cpu)
-        while True:
-            if not res.done():
-                await ctx.send("Calculating...")
-            else:
-                await ctx.send(await res)
-                return
-
 
 
 def setup(bot):
