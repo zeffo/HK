@@ -59,8 +59,8 @@ async def info(ctx):
 @bot.command()
 @commands.is_owner()
 async def update(ctx):
+    await ctx.send("Preparing to update...")
     if __name__ == '__main__':
-        await ctx.send("Preparing to update...")
         run(['git', 'pull', '-f', 'origin', 'master'])
         run([sys.executable, 'bot.py'])
         exit()
