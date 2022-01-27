@@ -11,8 +11,6 @@ import aiohttp
 from subprocess import Popen, run
 import sys
 
-from sympy import EX
-
 
 class Bot(commands.Bot):
     def __init__(self, *args, **kwargs):
