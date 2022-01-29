@@ -1,0 +1,8 @@
+*.pdf
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite
+*.env
+.vscode/
+*.log
