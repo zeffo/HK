@@ -7,3 +7,6 @@
     - YOUTUBE_API_KEY: YouTube Data API key, see https://developers.google.com/youtube/v3/getting-started
     - DATABASE_URI: postgres connection string
 
+# Running
+
+Run as a python module (`python -m HK`)
