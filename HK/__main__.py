@@ -9,6 +9,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from pathlib import Path
 from .utils import sysinfo
+from typing import Optional
 
 logger = logging.getLogger("discord")
 logger.setLevel(logging.ERROR)
@@ -24,6 +25,8 @@ with open("config.yaml") as f:
 
 
 class Bot(commands.Bot):
+    pool: Optional[asyncpg.pool.Pool] = None
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.color = settings["color"]
@@ -45,8 +48,9 @@ class Bot(commands.Bot):
             )
 
     async def start(self) -> None:
-        self.pool = await asyncpg.create_pool(getenv("DATABASE_URI"))
-        await self.validate_tables()
+        if uri := getenv("DATABASE_URI"):
+            self.pool = await asyncpg.create_pool(uri)
+            await self.validate_tables()
         self._session = aiohttp.ClientSession()
         for file in Path("HK/extensions").glob("**/*.py"):
             *tree, _ = file.parts

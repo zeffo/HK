@@ -19,6 +19,7 @@ FFMPEG_OPTIONS = {
 }
 YT_API_KEY = getenv("YOUTUBE_API_KEY")
 
+logger = logging.getLogger('discord')
 
 class CustomAudio(PCMVolumeTransformer):
     played = 0
@@ -27,10 +28,8 @@ class CustomAudio(PCMVolumeTransformer):
         self.played += 20
         return super().read()
 
-
-class NoVoiceState(Exception):
-    """Raised when a member does not have a VoiceState"""
-
+class Error(Exception):
+    """An elegant way to send exceptions to discord without messy if statements"""
 
 class Track:
     def __init__(self, ctx, query, *, pafy=None) -> None:
@@ -67,12 +66,15 @@ class Track:
         track = cls(ctx, query)
         if re.match(r"^(https?\:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$", query):
             await track._new()
-        else:
-            async with ctx.bot.cs.get(
+        elif YT_API_KEY:
+            async with ctx.bot._session.get(
                 YOUTUBE_SEARCH_ENDPOINT.format(query, YT_API_KEY)
             ) as resp:
                 data = await resp.json()
             await track._new(data["items"][0]["id"]["videoId"])
+        else:
+            logger.error("Fuzzy searching is not enabled!")
+            raise Error("Warning: You must enter a valid URL, or ask the bot administrator to enable the YouTube Search feature by entering a valid API key.")
         return track
 
     @classmethod
@@ -139,11 +141,6 @@ class Queue(asyncio.Queue):
         for track in tracks:
             await self.add(track)
 
-
-class Error(Exception):
-    """An elegant way to send exceptions to discord without messy if statements"""
-
-
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -172,7 +169,7 @@ class Music(commands.Cog):
     async def play(self, ctx, *, query: str) -> None:
         async with ctx.typing():
             if not ctx.author.voice:
-                raise NoVoiceState(ctx.author)
+                raise Error(ctx.author)
             if not ctx.guild.voice_client:
                 queue = await self.prepare_queue(ctx)
             else:
@@ -195,6 +192,7 @@ class Music(commands.Cog):
                 embed.title = "Queued!"
                 await ctx.send(embed=embed)
                 await queue.add(track)
+                
 
     def get_queue(self, ctx, *, error=False):
         res = (

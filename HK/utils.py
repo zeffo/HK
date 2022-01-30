@@ -1,9 +1,10 @@
 import sys, psutil, discord
 from jishaku.modules import package_version
 from jishaku.features.root_command import natural_size
+from typing import Generator
 
 
-def chunks(it, size):
+def chunks(it: list, size: int) -> Generator:
     return (
         it[size * i : size * (i + 1)]
         for i, _ in enumerate(range(0, len(it) * size, size))
@@ -74,6 +75,6 @@ def sysinfo(bot):
         summary.append(f"{message_cache} and {guild_subscriptions}.")
 
     summary.append(f"Average websocket latency: {round(bot.latency * 1000, 2)}ms")
-    summary.append(f"Extensions ({len(bot.extensions)}): {', '.join(bot.extensions)}")
+    summary.append(f"Cogs ({len(bot.cogs)}): {', '.join(bot.cogs)}")
 
     return "\n".join(summary)
