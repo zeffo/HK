@@ -7,7 +7,7 @@ class Nitro(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    @commands.command(usage='`hk impersonate (ping user OR give ID) (the message)`')
+    @commands.command(usage='`hk impersonate (User ID/mention) (content)`')
     @commands.bot_has_permissions(manage_webhooks=True)
     async def impersonate(self, ctx, target: Union[discord.Member, discord.User], *, message):
         ''' Command to send a message as another user via webhook '''
