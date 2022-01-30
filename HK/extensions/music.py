@@ -171,10 +171,7 @@ class Music(commands.Cog):
                 await queue.add(track)
 
     def get_queue(self, ctx, *, error=False):
-        if ctx.voice_client and (queue := self.queues[ctx.guild.id]):
-            res = queue
-        else:
-            res = None
+        res = queue if ctx.voice_client and (queue := self.queues[ctx.guild.id]) else None
         if error and not res:
             raise self.EMPTY
         return res
