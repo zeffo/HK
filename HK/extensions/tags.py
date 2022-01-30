@@ -1,6 +1,5 @@
 import asyncpg
 from discord.ext import commands
-from sympy import EX
 from ..paginator import Paginator, Unit
 from ..__main__ import Bot
 from ..utils import chunks
