@@ -1,10 +1,12 @@
 from discord.ext import commands
 from ..paginator import Unit, Paginator
 
+
 class Help(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         bot.help_command = FormattedHelp()
+
 
 class FormattedHelp(commands.HelpCommand):
     def __init__(self):

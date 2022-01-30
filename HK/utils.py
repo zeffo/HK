@@ -4,7 +4,11 @@ from jishaku.features.root_command import natural_size
 
 
 def chunks(it, size):
-    return (it[size*i:size*(i+1)] for i, _ in enumerate(range(0, len(it)*size, size)))
+    return (
+        it[size * i : size * (i + 1)]
+        for i, _ in enumerate(range(0, len(it) * size, size))
+    )
+
 
 def sysinfo(bot):
     """Taken and modified from jishaku.features.root_command"""

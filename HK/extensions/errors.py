@@ -4,7 +4,8 @@ import logging
 from io import StringIO
 from discord.ext import commands
 
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
+
 
 class Errors(commands.Cog):
     def __init__(self, bot):
@@ -18,9 +19,14 @@ class Errors(commands.Cog):
                 return
         if not isinstance(error, commands.CommandNotFound):
             buffer = StringIO()
-            traceback.print_exception(type(error), error, error.__traceback__, file=buffer)
+            traceback.print_exception(
+                type(error), error, error.__traceback__, file=buffer
+            )
             buffer.seek(0)
-            await ctx.send("Observation: I seem to have ran into a problem.", file=discord.File(buffer, 'traceback.txt'))
+            await ctx.send(
+                "Observation: I seem to have ran into a problem.",
+                file=discord.File(buffer, "traceback.txt"),
+            )
             logger.error(buffer.getvalue())
 
 

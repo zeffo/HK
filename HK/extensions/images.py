@@ -4,7 +4,14 @@ from discord.ui import View, button, select
 from discord.errors import Forbidden, HTTPException, NotFound
 from discord.ext import commands
 from typing import List, Union, Optional, Tuple
-from PIL import Image, ImageOps, ImageChops, UnidentifiedImageError, ImageFilter, ImageEnhance
+from PIL import (
+    Image,
+    ImageOps,
+    ImageChops,
+    UnidentifiedImageError,
+    ImageFilter,
+    ImageEnhance,
+)
 from io import BytesIO
 from PyPDF2 import PdfFileMerger, PdfFileReader
 from asyncio import get_running_loop, AbstractEventLoop, Future
@@ -15,7 +22,8 @@ import pyqrcode
 
 
 class URL(commands.Converter):
-    """ Returns a BytesIO object from a URL """
+    """Returns a BytesIO object from a URL"""
+
     async def convert(self, ctx, arg):
         try:
             ret = await ctx.bot.http.get_from_cdn(arg)
@@ -23,17 +31,25 @@ class URL(commands.Converter):
         except (NotFound, Forbidden, HTTPException):
             return None
 
-# These classes represent the common sources an image can be retrieved from. `None` is present in the case an invalid source is provided. 
+
+# These classes represent the common sources an image can be retrieved from. `None` is present in the case an invalid source is provided.
 MODELS = Union[Message, Member, URL, User, PartialEmoji, None]
+
+
 class Targets:
-    """ This class helps identify targets from which an image can be retrieved. """
+    """This class helps identify targets from which an image can be retrieved."""
 
     def __init__(self, ctx: commands.Context):
         self.ctx = ctx
-        self.priority: Tuple = (self.attachments, self.parameters, self.reference, self.authors) # Functions listed here must return a sequence of BytesIO, preferably tuple or list
+        self.priority: Tuple = (
+            self.attachments,
+            self.parameters,
+            self.reference,
+            self.authors,
+        )  # Functions listed here must return a sequence of BytesIO, preferably tuple or list
 
     async def targets(self, size=None) -> List[BytesIO]:
-        """ Returns a list of BytesIO objects from the priority list (`Targets.priority`) """
+        """Returns a list of BytesIO objects from the priority list (`Targets.priority`)"""
         found = []
         count = 0
         for method in self.priority:
@@ -61,11 +77,11 @@ class Targets:
         return BytesIO(_bytes) if _bytes else None
 
     async def attachments(self) -> List[BytesIO]:
-        """ Return a List of BytesIO objects from the original message's attachments. """
+        """Return a List of BytesIO objects from the original message's attachments."""
         return [BytesIO(await att.read()) for att in self.ctx.message.attachments]
 
     async def parameters(self) -> List[BytesIO]:
-        """ Return a List of BytesIO objects from the command parameters. """
+        """Return a List of BytesIO objects from the command parameters."""
         args = self.ctx.args
         if not args:
             return []
@@ -81,19 +97,27 @@ class Targets:
         return ret
 
     async def reference(self) -> List[BytesIO]:
-        """ Return a List of BytesIO objects from the reference message's attachments."""
-        return [BytesIO(await att.read()) for att in self.ctx.message.reference.resolved.attachments] if self.ctx.message.reference else []
-    
+        """Return a List of BytesIO objects from the reference message's attachments."""
+        return (
+            [
+                BytesIO(await att.read())
+                for att in self.ctx.message.reference.resolved.attachments
+            ]
+            if self.ctx.message.reference
+            else []
+        )
+
     async def authors(self) -> List[BytesIO]:
-        """ Returns a List of BytesIO objects from the avatars of the authors of the original message and the referenced message. """
+        """Returns a List of BytesIO objects from the avatars of the authors of the original message and the referenced message."""
         targets = []
         if self.ctx.message.reference:
             targets.append(self.ctx.message.reference.resolved.author)
         targets.append(self.ctx.author)
         return [BytesIO(await m.avatar.read()) for m in targets]
 
+
 class NoTarget(Exception):
-    """ Raised when an invalid target is passed."""
+    """Raised when an invalid target is passed."""
 
     def __init__(self, reason):
         self.reason = reason
@@ -139,10 +163,12 @@ class Machine:
         self.sources.append(source)
 
     def thread(func):
-        """ Runs a function in another thread, returns a Future """
+        """Runs a function in another thread, returns a Future"""
+
         @wraps(func)
         def wrapper(*args, **kwargs) -> Future:
             return args[0].loop.run_in_executor(None, partial(func, *args, **kwargs))
+
         return wrapper
 
     def targets(targets=1):
@@ -152,13 +178,15 @@ class Machine:
                 if len(args[0].sources) < targets:
                     raise NoTarget(f"Requires {targets} targets")
                 return func(*args, **kwargs)
+
             return wrapper
+
         return inner
 
     def isshade(self, color1: tuple, color2: tuple, threshold=100):
-        """ Checks if the first RGB tuple is a shade of the second RGB tuple """
+        """Checks if the first RGB tuple is a shade of the second RGB tuple"""
         for i in range(len(color1)):
-            if abs(color2[i]-color1[i]) > threshold:
+            if abs(color2[i] - color1[i]) > threshold:
                 return False
         return True
 
@@ -171,26 +199,25 @@ class Machine:
                 white += 1
         return white > black
 
-
     def to_buffer(self, image: Image) -> BytesIO:
-        """ Takes Image and returns BytesIO. Please ensure this function is called in another thread to avoid blocking """
+        """Takes Image and returns BytesIO. Please ensure this function is called in another thread to avoid blocking"""
         buffer = BytesIO()
-        image.save(buffer, format='gif')
+        image.save(buffer, format="gif")
         buffer.seek(0)
         return buffer
 
     @targets(1)
     @thread
     def invert(self) -> BytesIO:
-        image = Image.open(self.sources[0]).convert('RGB')
+        image = Image.open(self.sources[0]).convert("RGB")
         inverted = ImageOps.invert(image)
         return self.to_buffer(inverted)
-    
+
     @targets(2)
     @thread
     def blend(self):
-        primary = Image.open(self.sources[0]).convert('RGB')
-        secondary = Image.open(self.sources[1]).convert('RGB').resize(primary.size)
+        primary = Image.open(self.sources[0]).convert("RGB")
+        secondary = Image.open(self.sources[1]).convert("RGB").resize(primary.size)
         blended = Image.blend(primary, secondary, alpha=0.5)
         return self.to_buffer(blended)
 
@@ -210,22 +237,22 @@ class Machine:
     @targets(2)
     @thread
     def lighter(self):
-        image = Image.open(self.sources[0]).convert('RGBA')
-        other = Image.open(self.sources[1]).convert('RGBA').resize(image.size)
+        image = Image.open(self.sources[0]).convert("RGBA")
+        other = Image.open(self.sources[1]).convert("RGBA").resize(image.size)
         return self.to_buffer(ImageChops.lighter(image, other))
 
     @targets(2)
     @thread
     def darker(self):
-        image = Image.open(self.sources[0]).convert('RGBA')
-        other = Image.open(self.sources[1]).resize(image.size).convert('RGBA')
+        image = Image.open(self.sources[0]).convert("RGBA")
+        other = Image.open(self.sources[1]).resize(image.size).convert("RGBA")
         return self.to_buffer(ImageChops.darker(image, other))
 
     @targets(2)
     @thread
     def subtract(self):
-        image = Image.open(self.sources[0]).convert('RGBA')
-        other = Image.open(self.sources[1]).resize(image.size).convert('RGBA')
+        image = Image.open(self.sources[0]).convert("RGBA")
+        other = Image.open(self.sources[1]).resize(image.size).convert("RGBA")
         return self.to_buffer(ImageChops.subtract_modulo(image, other))
 
     @targets(1)
@@ -252,9 +279,9 @@ class Machine:
         image = Image.open(self.sources[0])
         for x in range(image.size[0]):
             for y in range(image.size[1]):
-                now = image.getpixel((x,y))
+                now = image.getpixel((x, y))
                 if self.isshade(now, og.to_rgb()):
-                    image.putpixel((x,y), to.to_rgb())
+                    image.putpixel((x, y), to.to_rgb())
         return self.to_buffer(image)
 
     @targets(1)
@@ -262,7 +289,7 @@ class Machine:
     def smooth(self):
         image = Image.open(self.sources[0])
         return self.to_buffer(image.filter(ImageFilter.SMOOTH_MORE))
-    
+
     @targets(1)
     @thread
     def blur(self):
@@ -270,7 +297,7 @@ class Machine:
         return self.to_buffer(image.filter(ImageFilter.BLUR))
 
     @targets(1)
-    @thread 
+    @thread
     def gaussianblur(self, radius: int):
         image = Image.open(self.sources[0])
         return self.to_buffer(image.filter(ImageFilter.GaussianBlur(radius)))
@@ -278,8 +305,13 @@ class Machine:
     @targets(1)
     @thread
     def adjust(self, **kwargs):
-        image = Image.open(self.sources[0]).convert('RGBA')
-        methods = {'brightness': ImageEnhance.Brightness, 'color': ImageEnhance.Color, 'contrast': ImageEnhance.Contrast, 'sharpness': ImageEnhance.Sharpness}
+        image = Image.open(self.sources[0]).convert("RGBA")
+        methods = {
+            "brightness": ImageEnhance.Brightness,
+            "color": ImageEnhance.Color,
+            "contrast": ImageEnhance.Contrast,
+            "sharpness": ImageEnhance.Sharpness,
+        }
         for method, value in kwargs.items():
             if value != 1.0:
                 image = methods[method](image).enhance(value)
@@ -288,7 +320,7 @@ class Machine:
     @targets(1)
     @thread
     def removebg(self):
-        image = Image.open(self.sources[0]).convert('RGBA')
+        image = Image.open(self.sources[0]).convert("RGBA")
         edges = ImageOps.grayscale(image)
         if not self.islight(edges, threshold=127.5):
             edges = ImageOps.invert(edges)
@@ -303,9 +335,9 @@ class Machine:
     @targets(1)
     @thread
     def pdf(self):
-        image = Image.open(self.sources[0]).convert('RGB')
+        image = Image.open(self.sources[0]).convert("RGB")
         buffer = BytesIO()
-        image.save(buffer, format='pdf')
+        image.save(buffer, format="pdf")
         buffer.seek(0)
         return buffer
 
@@ -313,11 +345,11 @@ class Machine:
     def merge_pdfs(self, options: set):
         merger = PdfFileMerger()
         for source in self.sources:
-            image = Image.open(source).convert('RGB')
-            if 'rotate-all' in options:
+            image = Image.open(source).convert("RGB")
+            if "rotate-all" in options:
                 image = image.rotate(90, expand=True)
             buffer = BytesIO()
-            image.save(buffer, format='pdf')
+            image.save(buffer, format="pdf")
             buffer.seek(0)
             merger.append(PdfFileReader(buffer))
         buffer = BytesIO()
@@ -332,19 +364,21 @@ class Machine:
         qr.png(buffer)
         buffer.seek(0)
         image = Image.open(buffer)
-        new = image.resize((image.width*4, image.height*4))
+        new = image.resize((image.width * 4, image.height * 4))
         resized_buffer = BytesIO()
-        new.save(resized_buffer, format='png')
+        new.save(resized_buffer, format="png")
         resized_buffer.seek(0)
         return resized_buffer
 
-        
+
 class InvalidOperation(Exception):
-    """ Raised when an non-existent operation is used. """
-             
+    """Raised when an non-existent operation is used."""
+
+
 class Palette:
     def __init__(self, ctx):
         self.ctx = ctx
+
 
 class PaletteView(View):
     def __init__(self, ctx, target):
@@ -356,6 +390,7 @@ class PaletteView(View):
     async def image_filters(self, select, interaction):
         return
 
+
 class ConfirmView(View):
     def __init__(self, ctx, session):
         super().__init__()
@@ -363,12 +398,12 @@ class ConfirmView(View):
         self.session = session
         self.continued = False
 
-    @button(label='Yes', style=ButtonStyle.success)
+    @button(label="Yes", style=ButtonStyle.success)
     async def yes(self, button, interaction):
         await interaction.message.channel.send(file=await self.session.compile())
         self.stop()
 
-    @button(label='No', style=ButtonStyle.danger)
+    @button(label="No", style=ButtonStyle.danger)
     async def no(self, button, interaction):
         self.continued = True
         self.stop()
@@ -377,7 +412,10 @@ class ConfirmView(View):
         if interaction.user == self.ctx.author:
             return True
         else:
-            await interaction.response.send_message("You cannot interact with someone else's command!", ephemeral=True)
+            await interaction.response.send_message(
+                "You cannot interact with someone else's command!", ephemeral=True
+            )
+
 
 class Images(commands.Cog):
     """Professional grade image editing tools brought to you. Multi-threaded, blazing-fast and intuitive."""
@@ -397,20 +435,29 @@ class Images(commands.Cog):
             except NoTarget as e:
                 return await ctx.send(str(e), delete_after=10)
             except AttributeError:
-                raise InvalidOperation(f"Invalid Image Operation! {ctx.author} used {ctx.command.qualified_name}.")
+                raise InvalidOperation(
+                    f"Invalid Image Operation! {ctx.author} used {ctx.command.qualified_name}."
+                )
 
     async def cog_command_error(self, ctx, error):
-        error = getattr(error, 'original', error)
+        error = getattr(error, "original", error)
         if isinstance(error, InvalidOperation):
-            await ctx.send(f"I couldn't find the operation {ctx.command.qualified_name}, I have notified my developers!") 
+            await ctx.send(
+                f"I couldn't find the operation {ctx.command.qualified_name}, I have notified my developers!"
+            )
         elif isinstance(error, UnidentifiedImageError):
             await ctx.send("Could not parse the given image!")
         elif isinstance(error, BadColourArgument):
-            await ctx.send("Couldn't find that color! Try using a hexadecimal value instead.")
+            await ctx.send(
+                "Couldn't find that color! Try using a hexadecimal value instead."
+            )
         else:
             raise error
 
-    @commands.command(aliases=('darken', 'darkmode', 'kindadarkmode'), description="Inverts the colors of an image. You can reply to a message with an image, tag a user, pass a custom emoji, or provide a message id or user id.")
+    @commands.command(
+        aliases=("darken", "darkmode", "kindadarkmode"),
+        description="Inverts the colors of an image. You can reply to a message with an image, tag a user, pass a custom emoji, or provide a message id or user id.",
+    )
     async def invert(self, ctx, target: MODELS):
         await self.auto(ctx)
 
@@ -418,35 +465,49 @@ class Images(commands.Cog):
     async def blend(self, ctx, target: MODELS, other: MODELS):
         await self.auto(ctx)
 
-    @commands.command(description="Removes the given amount of pixels from each side of the image.")
-    async def crop(self, ctx, target: MODELS, pixels: int=50):
+    @commands.command(
+        description="Removes the given amount of pixels from each side of the image."
+    )
+    async def crop(self, ctx, target: MODELS, pixels: int = 50):
         await self.auto(ctx, pixels)
 
-    @commands.command(description="Adds a border frame to the image. You can set the width in pixels, and the color.")
+    @commands.command(
+        description="Adds a border frame to the image. You can set the width in pixels, and the color."
+    )
     async def border(self, ctx, target: MODELS, width: int, color: Color):
         await self.auto(ctx, width, color)
 
-    @commands.command(description="Compares the pixels of two images and creates an image with all the lighter pixels.")
+    @commands.command(
+        description="Compares the pixels of two images and creates an image with all the lighter pixels."
+    )
     async def lighter(self, ctx, target: MODELS, target2: MODELS):
         await self.auto(ctx)
-    
-    @commands.command(description="Subtracts the RGB values of each pixel of one image from another and creates an image with the resultant RGB values.")
+
+    @commands.command(
+        description="Subtracts the RGB values of each pixel of one image from another and creates an image with the resultant RGB values."
+    )
     async def subtract(self, ctx, target: MODELS, target2: MODELS):
         await self.auto(ctx)
 
-    @commands.command(description="Compares the pixels of two images and creates an image with all the darker pixels.")
+    @commands.command(
+        description="Compares the pixels of two images and creates an image with all the darker pixels."
+    )
     async def darker(self, ctx, target: MODELS, target2: MODELS):
         await self.auto(ctx)
-        
-    @commands.command(description="Creates an image with the contours of the given image.")
+
+    @commands.command(
+        description="Creates an image with the contours of the given image."
+    )
     async def contour(self, ctx, target: MODELS):
         await self.auto(ctx)
 
-    @commands.command(description="Creates an image with only edges from the given image.")
+    @commands.command(
+        description="Creates an image with only edges from the given image."
+    )
     async def edges(self, ctx, target: MODELS):
         await self.auto(ctx)
 
-    @commands.command(description="Embosses the given image.", aliases=['carbonite'])
+    @commands.command(description="Embosses the given image.", aliases=["carbonite"])
     async def emboss(self, ctx, target: MODELS):
         await self.auto(ctx)
 
@@ -466,34 +527,42 @@ class Images(commands.Cog):
     async def gaussianblur(self, ctx, target: MODELS, radius: int):
         await self.auto(ctx, radius)
 
-    @commands.command(aliases=['removebackground'], description="Removes the background of an image. This is experimental!")
+    @commands.command(
+        aliases=["removebackground"],
+        description="Removes the background of an image. This is experimental!",
+    )
     async def removebg(self, ctx, target: MODELS):
         await self.auto(ctx)
 
     @commands.group(invoke_without_command=True)
     async def qr(self, ctx):
-        await ctx.send("Use `hk qr make` to make a QR code and `hk qr read` to read one!", delete_after=10)
+        await ctx.send(
+            "Use `hk qr make` to make a QR code and `hk qr read` to read one!",
+            delete_after=10,
+        )
 
     @qr.command()
     async def make(self, ctx, *, message: str):
         machine = Machine(loop=ctx.bot.loop)
-        await ctx.send(file=File(await machine.make_qr(message), filename='QR.png'))
+        await ctx.send(file=File(await machine.make_qr(message), filename="QR.png"))
 
     @commands.group(invoke_without_command=True)
     async def pdf(self, ctx):
         if ctx.author.id in self.sessions:
-            await ctx.send("Your old session was deleted and a new session was created!")
+            await ctx.send(
+                "Your old session was deleted and a new session was created!"
+            )
         else:
             await ctx.send("A new session was created!")
         self.sessions[ctx.author.id] = Machine(loop=self.bot.loop)
-    
+
     @pdf.command()
     async def stop(self, ctx, *options: set):
         if not ctx.author.id in self.sessions:
             return await ctx.send("You don't have a session open!")
-        
+
         mach: Machine = self.sessions[ctx.author.id]
-        file = File(await mach.merge_pdfs(options=options), filename='merged.pdf')
+        file = File(await mach.merge_pdfs(options=options), filename="merged.pdf")
         await ctx.send("Compiled successfully!", file=file)
         del self.sessions[ctx.author.id]
 
@@ -502,19 +571,6 @@ class Images(commands.Cog):
         if (mach := self.sessions.get(message.author.id)) and message.attachments:
             for att in message.attachments:
                 mach.sources.append(BytesIO(await att.read()))
-    
-
-            
-        
-
-
-
-
-
-
-
-
-
 
 
 def setup(bot):
