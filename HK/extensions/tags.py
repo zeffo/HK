@@ -25,27 +25,26 @@ class Tags(commands.Cog):
                 await con.execute(
                     "INSERT INTO Tags (keyword, meta) VALUES ($1, $2)", keyword, meta
                 )
-                reaction = "<:yes:866983565639942184>"
+                res = f"Statement: Tag {keyword} created successfully."
             except asyncpg.exceptions.UniqueViolationError:
-                reaction = "❌"
-
-        await ctx.message.add_reaction(reaction)
+                res = f"Observation: I cannot create that tag since it already exists."
+        await ctx.send(res)
 
     @tag.command()
     async def delete(self, ctx, *, keyword: str):
         """Delete a tag"""
         async with self.pool.acquire() as con:
-            result = await con.execute("DELETE FROM Tags WHERE keyword=$1", keyword)
-        await ctx.send(result)
-
+            result = await con.fetch("DELETE FROM Tags WHERE keyword=$1 RETURNING *;", keyword)
+        await ctx.send(f"Statement: Deleted tag {keyword} successfully." if result else "Statement: Could not find that tag.")
+    
     @tag.command()
     async def edit(self, ctx, keyword, *, meta):
         """Edit a tag's contents"""
         async with self.pool.acquire() as con:
             result = await con.execute(
-                "UPDATE Tags SET meta=$1 WHERE keyword=$2", meta, keyword
+                "UPDATE Tags SET meta=$1 WHERE keyword=$2 RETURNING *", meta, keyword
             )
-        await ctx.send(result)
+        await ctx.send(f"Statement: Updated {keyword} successfully." if result else "Statement: Could not find that tag.")
 
     @commands.command()
     async def tags(self, ctx):
