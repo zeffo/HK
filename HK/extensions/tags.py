@@ -44,21 +44,20 @@ class Tags(commands.Cog):
             result = await con.execute('UPDATE Tags SET meta=$1 WHERE keyword=$2', meta, keyword)
         await ctx.send(result)
 
+
     @commands.command()
     async def tags(self, ctx):
         """List all tags"""
         async with self.pool.acquire() as con:
             records = await con.fetch('SELECT keyword FROM Tags')
-        if records:
-            units = []
-            for i, chunk in enumerate(chunks(records, 25)):  
-                embed = self.bot.embed(title=f"Page {i+1} of {(len(records)//25)+1}")
-                content = '\n'.join([r['keyword'] for r in chunk])
-                embed.description = f"```\n{content}```"
-                units.append(Unit(embed=embed))
-            await ctx.send(embed=units[0].embed, view=Paginator(ctx, units=units))
-        else:
-            await ctx.send(embed=self.bot.embed(title="404", description="Statement: No tags were found."))
-
+        if not records:
+            return await ctx.send(embed=self.bot.embed(title="404", description="Statement: No tags were found."))
+        units = []
+        for i, chunk in enumerate(chunks(records, 10)):
+            embed = self.bot.embed(title=f"Page {i+1} of {(len(records)//10)+1}")
+            content = '\n'.join([r['keyword'] for r in chunk])
+            embed.description = f"```\n{content}```"
+            units.append(Unit(embed=embed))
+        await ctx.send(embed=units[0].embed, view=Paginator(ctx, units=units))
 def setup(bot):
     bot.add_cog(Tags(bot))
