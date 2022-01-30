@@ -267,15 +267,6 @@ class Music(commands.Cog):
         if self.get_queue(ctx, error=True):
             del self.queues[ctx.guild.id]
 
-    @commands.command()
-    async def effect(self, ctx, *, opt):
-        if queue := self.get_queue(ctx, error=True):
-            vclient = ctx.voice_client
-            vclient.stop()
-            source = FFmpegPCMAudio(await queue.playing.audio(), before_options=f"{opt} {FFMPEG_OPTIONS['before_options']}", options=FFMPEG_OPTIONS['options'])
-            stream = CustomAudio(source, volume=0.1)
-            ctx.voice_client.play(stream, after=lambda _: self.bot.loop.create_task(queue.next()))
-            await ctx.send(f"Options applied!")
             
 
 def setup(bot):
