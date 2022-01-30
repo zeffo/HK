@@ -50,7 +50,7 @@ class Bot(commands.Bot):
                 self.load_extension(f"{'.'.join(tree)}.{file.stem}")
             except Exception as e:
                 traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
-        for ex in self.settings.get('extensions', []):
+        for ex in self.settings.get('extensions', ()):
             self.load_extension(ex)
         await super().start(getenv("TOKEN"))
 
