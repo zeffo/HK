@@ -42,6 +42,8 @@ class Bot(commands.Bot):
 
     async def validate_tables(self):
         """Creates required tables"""
+        if self.pool is None:
+            raise ValueError("Bot has no connection pool!")
         async with self.pool.acquire() as con:
             await con.execute(
                 "CREATE TABLE IF NOT EXISTS Tags (keyword TEXT Primary Key, meta TEXT);"
@@ -60,7 +62,7 @@ class Bot(commands.Bot):
                 traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
         for ex in self.settings.get("extensions", ()):
             self.load_extension(ex)
-        await super().start(getenv("TOKEN"))
+        await super().start(getenv("TOKEN"))    #type: ignore
 
     async def stop(self):
         await self._session.close()
