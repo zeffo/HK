@@ -10,3 +10,9 @@
 # Running
 
 Run as a python module (`python -m HK`)
+
+# Adding new features
+
+HK uses discord.py 2.0.0a.
+To add your own features, create extensions as shown in https://discordpy.readthedocs.io/en/latest/ext/commands/extensions.html, and add them to the extensions list in config.yaml.
+
