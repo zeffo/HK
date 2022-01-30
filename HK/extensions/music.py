@@ -1,6 +1,7 @@
 import pafy
 import asyncio
 import re
+import logging
 
 from discord import FFmpegPCMAudio, PCMVolumeTransformer
 from discord.ext import commands
@@ -42,6 +43,8 @@ class Track:
     def audio(self):
         if self.pafy:
             return self.pafy.getbestaudio().url_https
+        else:
+            logging.error(f"Could not find an audio source for {repr(self)}")
 
     @thread
     def _new(self, url=None):

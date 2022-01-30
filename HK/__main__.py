@@ -35,8 +35,14 @@ class Bot(commands.Bot):
         self.settings: dict = settings
         self.settings.setdefault('emojis', default_emojis)
 
+    async def validate_tables(self):
+        """Creates required tables"""
+        async with self.pool.acquire() as con:
+            await con.execute("CREATE TABLE IF NOT EXISTS Tags (keyword TEXT Primary Key, meta TEXT);")
+        
     async def start(self) -> None:
         self.pool = await asyncpg.create_pool(getenv("DATABASE_URI"))
+        await self.validate_tables()
         self._session = aiohttp.ClientSession()
         for file in Path('HK/extensions').glob('**/*.py'):
             *tree, _ = file.parts
