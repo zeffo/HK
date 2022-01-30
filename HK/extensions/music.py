@@ -261,9 +261,10 @@ class Music(commands.Cog):
 
     @commands.command()
     async def dc(self, ctx):
-        if self.get_queue(ctx, error=True):
+        if ctx.voice_client:
             ctx.voice_client.stop()
             await ctx.voice_client.disconnect()
+        if self.get_queue(ctx, error=True):
             del self.queues[ctx.guild.id]
 
     @commands.command()
