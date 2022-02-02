@@ -19,7 +19,8 @@ class Errors(commands.Cog):
                 return
         if isinstance(error, commands.NotOwner):
             await ctx.send("Statement: Only the bot owner may use this command!", delete_after=10)
-        if not isinstance(error, commands.CommandNotFound):
+
+        elif not isinstance(error, commands.CommandNotFound):   
             buffer = StringIO()
             traceback.print_exception(
                 type(error), error, error.__traceback__, file=buffer
