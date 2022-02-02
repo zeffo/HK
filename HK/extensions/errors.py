@@ -17,6 +17,8 @@ class Errors(commands.Cog):
         if ctx.command:
             if ctx.command.has_error_handler() or ctx.command.cog.has_error_handler():
                 return
+        if isinstance(error, commands.NotOwner):
+            await ctx.send("Only the bot owner may use this command!", delete_after=10)
         if not isinstance(error, commands.CommandNotFound):
             buffer = StringIO()
             traceback.print_exception(
