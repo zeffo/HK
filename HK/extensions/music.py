@@ -306,7 +306,7 @@ class Music(commands.Cog):
         if ctx.voice_client:
             ctx.voice_client.stop()
             await ctx.voice_client.disconnect()
-        if self.get_queue(ctx, error=True):
+        if self.get_queue(ctx):
             del self.queues[ctx.guild.id]
 
 
