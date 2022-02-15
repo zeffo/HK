@@ -276,7 +276,7 @@ class Music(commands.Cog):
             done = ctx.voice_client.source.played // 1000
             embed.add_field(
                 name="Duration Left",
-                value=f"`{total-done}s --> {round(done/total*100)}% complete ~ requested by {queue.playing.ctx.author.mention}`",
+                value=f"`{total-done}s --> {round(done/total*100)}% complete ~ requested by {queue.playing.ctx.author}`",
             )
             await ctx.send(embed=embed)
 
