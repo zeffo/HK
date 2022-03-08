@@ -103,7 +103,7 @@ if __name__ == "__main__":
     bot = Bot(
         settings.get("prefix", "hk "),
         allowed_mentions=AllowedMentions(everyone=False),
-        intents=Intents.all(),
+        intents=Intents._from_value(settings.get('intents', 32767)),
         loop=loop,
     )
 
