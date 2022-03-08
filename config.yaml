@@ -1,6 +1,7 @@
 color: 0xa80000   #required
 extensions:
   - jishaku
+  - custom.ponies
   - custom.presence
   - custom.typeracerold
 emojis:

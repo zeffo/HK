@@ -31,7 +31,7 @@ class Track:
         return update()
 
     def embed(self):
-        e = discord.Embed(title=self.title, url=self.data['webpage_url'])
+        e = discord.Embed(title=self.title, url=self.data.get('webpage_url', discord.embeds.EmptyEmbed))
         e.set_author(name="Now Playing")
         e.set_thumbnail(url=self.thumbnail)
         if self.ctx:
@@ -168,6 +168,8 @@ class Music(commands.Cog):
     async def cog_command_error(self, ctx, error) -> None:
         if isinstance(error, MusicError):
             await ctx.send(embed=discord.Embed(description=error))
+        elif isinstance(error, KeyError):
+            await ctx.send(embed=discord.Embed(description="Couldn't retrieve that song!"))
         else:
             raise error
 
