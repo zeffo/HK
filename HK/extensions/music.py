@@ -185,7 +185,6 @@ class Music(commands.Cog):
     async def skip(self, ctx):
         queue, vc = await self.prepare(ctx)
         vc.stop()
-        await queue.next()
 
     @commands.command()
     async def queue(self, ctx):
