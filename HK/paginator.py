@@ -30,6 +30,10 @@ class Paginator(View):
         self.units = units
         self.cursor = 0
 
+        for unit in units:
+            if not unit.embed.color:
+                unit.embed.color = ctx.bot.color
+
         for child in self.children:
             emoji = ctx.bot.settings["emojis"][child.callback.func.__name__]
             child.emoji = emoji

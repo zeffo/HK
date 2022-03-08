@@ -24,6 +24,20 @@ with open("config.yaml") as f:
     settings = yaml.safe_load(f)
 
 
+class Context(commands.Context):
+    async def connect(self):
+        if self.voice_client:
+            return self.voice_client
+        elif (vc := self.author.voice.channel):
+            return await vc.connect()
+
+    async def send(self, *args, **kwargs):
+        if 'embed' in kwargs:
+            kwargs['embed'].color = self.bot.color
+        
+        return await super().send(*args, **kwargs)
+        
+
 class Bot(commands.Bot):
     pool: Optional[asyncpg.pool.Pool] = None
 
@@ -48,6 +62,10 @@ class Bot(commands.Bot):
             await con.execute(
                 "CREATE TABLE IF NOT EXISTS Tags (keyword TEXT Primary Key, meta TEXT);"
             )
+
+    async def on_message(self, message):
+        ctx = await self.get_context(message, cls=Context)
+        await self.invoke(ctx)
 
     async def start(self) -> None:
         if uri := getenv("DATABASE_URI"):
