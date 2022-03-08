@@ -213,7 +213,8 @@ class Music(commands.Cog):
         if vc := ctx.voice_client:
             vc.stop()
             await vc.disconnect()
-        del self[ctx.guild]
+        if ctx.guild.id in self.queues:
+            del self.queues[ctx.guild.id]
 
     @commands.command()
     async def volume(self, ctx, volume: float):
