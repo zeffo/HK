@@ -135,14 +135,13 @@ class Queue(asyncio.Queue):
         for track in tracks:
             self.put_nowait(track)
 
-        if self.lock.locked():
-            if len(tracks) == 1:
-                track = tracks[0]
-                embed = track.embed()
-                embed.set_author(name="Queued")
-                await track.ctx.send(embed=embed)
-            else:
-                await track.ctx.send(embed=discord.Embed(title=f"Queued {len(tracks)} items!"))
+        if self.lock.locked() and len(tracks) == 1:
+            track = tracks[0]
+            embed = track.embed()
+            embed.set_author(name="Queued")
+            await track.ctx.send(embed=embed)
+        else:
+            await track.ctx.send(embed=discord.Embed(title=f"Queued {len(tracks)} items!"))
 
         if len(self._queue) == len(tracks) and not self.lock.locked():
             await self.play()
