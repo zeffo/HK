@@ -106,6 +106,8 @@ class Lock(asyncio.Lock):
 class Queue(asyncio.Queue):
     def __init__(self, guild: discord.Guild, loop, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if loop is None:
+            loop = asyncio.get_event_loop()
         self.guild = guild
         self.loop = loop
         self.lock = Lock()
@@ -189,8 +191,6 @@ class Music(commands.Cog):
     @commands.command()
     async def queue(self, ctx):
         queue, vc = await self.prepare(ctx)
-        if queue.empty():
-            return await ctx.send("The queue is empty!")
         items = list(queue._queue)
         units = []  
         if np := queue.lock.track:
@@ -206,7 +206,12 @@ class Music(commands.Cog):
             embed.description = f"```md\n{tracks}```"
             units.append(Unit(embed=embed))
         
-        await ctx.send(embed=units[0].embed, view=Paginator(ctx, units=units))
+        if len(units) == 1:
+            await ctx.send(embed=units[0].embed)
+        elif len(units) > 1:
+            await ctx.send(embed=units[0].embed, view=Paginator(ctx, units=units))
+        else:
+            await ctx.send("The queue is empty!")
 
     @commands.command()
     async def dc(self, ctx):
