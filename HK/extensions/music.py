@@ -112,6 +112,13 @@ class Queue(asyncio.Queue):
         self.loop = loop
         self.lock = Lock()
         self.volume = 0.5
+        self.repeat = False
+
+    async def get(self):
+        item = await super().get()
+        if self.repeat:
+            await self.put(item)
+        return item
 
     async def play(self):
         vc = self.guild.voice_client
@@ -189,10 +196,10 @@ class Music(commands.Cog):
 
     @commands.command()
     async def queue(self, ctx):
-        queue, vc = await self.prepare(ctx)
+        queue = self[ctx.guild]
         items = list(queue._queue)
         units = []  
-        if np := queue.lock.track:
+        if np := queue.lock.track and (vc := ctx.guild.voice_client):
             e = np.embed()
             e.set_author(name="Now Playing: ")
             e.description = f"`{vc.source.done//1000}/{np.duration}s`"
@@ -204,6 +211,10 @@ class Music(commands.Cog):
             tracks = "\n".join([f"{x+i}. {t.title}" for x, t in enumerate(chunk)])
             embed.description = f"```md\n{tracks}```"
             units.append(Unit(embed=embed))
+
+        if queue.repeat:
+            for unit in units:
+                unit.embed.set_footer(text='(Loop enabled)')
         
         if len(units) == 1:
             await ctx.send(embed=units[0].embed)
@@ -258,6 +269,12 @@ class Music(commands.Cog):
             embed.set_author(name="Removed")
             await ctx.send(embed=embed)
             del queue[index]
+
+    @commands.command()
+    async def loop(self, ctx):
+        queue = self[ctx.guild]
+        queue.repeat = True
+        await ctx.send("Queue looping enabled!")
         
 
 def setup(bot):
