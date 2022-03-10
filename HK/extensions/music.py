@@ -140,7 +140,7 @@ class Queue(asyncio.Queue):
             embed = track.embed()
             embed.set_author(name="Queued")
             await track.ctx.send(embed=embed)
-        else:
+        elif len(tracks) > 1:
             await track.ctx.send(embed=discord.Embed(title=f"Queued {len(tracks)} items!"))
 
         if len(self._queue) == len(tracks) and not self.lock.locked():
