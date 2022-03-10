@@ -121,13 +121,13 @@ class Queue(asyncio.Queue):
         return item
 
     async def play(self):
-        vc = self.guild.voice_client
-        track = await self.get()
-        await self.lock.acquire(track)
-        await (track @ YTDL(fast=False))
-        await track.ctx.send(embed=track.embed())
-        source = Audio(discord.FFmpegPCMAudio(track.stream, **{"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5","options": "-vn"}), volume=self.volume)
-        vc.play(source, after=lambda e: self.loop.create_task(self.next(e)))
+        if vc := self.guild.voice_client:
+            track = await self.get()
+            await self.lock.acquire(track)
+            await (track @ YTDL(fast=False))
+            await track.ctx.send(embed=track.embed())
+            source = Audio(discord.FFmpegPCMAudio(track.stream, **{"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5","options": "-vn"}), volume=self.volume)
+            vc.play(source, after=lambda e: self.loop.create_task(self.next(e)))
 
     def set_volume(self, volume):
         self.volume = volume
