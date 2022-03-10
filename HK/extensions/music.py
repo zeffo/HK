@@ -172,7 +172,7 @@ class Music(commands.Cog):
         elif isinstance(error, KeyError):
             await ctx.send(embed=discord.Embed(description="Couldn't retrieve that song!"))
         else:
-            await self.bot.dispatch('command_error', ctx, error)
+            self.bot.dispatch('command_error', ctx, error)
 
     @commands.command()
     async def play(self, ctx, *, query):
