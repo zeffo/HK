@@ -179,6 +179,7 @@ class Music(commands.Cog):
         elif isinstance(error, KeyError):
             await ctx.send(embed=discord.Embed(description="Couldn't retrieve that song!"))
         else:
+            ctx.command = None
             self.bot.dispatch('command_error', ctx, error)
 
     @commands.command()
@@ -273,8 +274,8 @@ class Music(commands.Cog):
     @commands.command()
     async def loop(self, ctx):
         queue = self[ctx.guild]
-        queue.repeat = True
-        await ctx.send("Queue looping enabled!")
+        queue.repeat = not queue.repeat
+        await ctx.send(f"Queue looping {'enabled' if queue.repeat else 'disabled'}.")
         
 
 def setup(bot):
