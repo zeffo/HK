@@ -19,6 +19,9 @@ class Errors(commands.Cog):
                 return
         if isinstance(error, commands.NotOwner):
             await ctx.send("Statement: Only the bot owner may use this command!", delete_after=10)
+        
+        elif isinstance(error, commands.BadArgument):
+            await ctx.send(f"I wasn't able to parse the command! Please make sure all the arguments are correct.")
 
         elif not isinstance(error, commands.CommandNotFound):   
             buffer = StringIO()

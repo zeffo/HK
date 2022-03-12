@@ -243,8 +243,7 @@ class Music(commands.Cog):
         elif isinstance(error, KeyError):
             await ctx.send(embed=discord.Embed(description="Couldn't retrieve that song!"))
         else:
-            ctx.command = None
-            await self.bot.get_cog('Errors').on_command_error(ctx, error)
+            ctx.command = None  # Propagate error to Errors.on_command_error
 
     @commands.command(description="Plays a song from youtube.")
     async def play(self, ctx, *, query):
