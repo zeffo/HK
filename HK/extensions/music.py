@@ -2,6 +2,7 @@ from typing import Optional
 import discord
 import asyncio
 from discord.ext import commands
+from numpy import isin
 import yt_dlp
 from ..paginator import Paginator, Unit
 from os import getenv
@@ -242,6 +243,8 @@ class Music(commands.Cog):
             await ctx.send(embed=discord.Embed(description=error))
         elif isinstance(error, KeyError):
             await ctx.send(embed=discord.Embed(description="Couldn't retrieve that song!"))
+        elif isinstance(yt_dlp.utils.DownloadError):
+            await ctx.send(embed=discord.Embed(description="Couldn't download that song!"))
         else:
             ctx.command = None  # Propagate error to Errors.on_command_error
 
