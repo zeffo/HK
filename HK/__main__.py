@@ -65,7 +65,7 @@ class Bot(commands.Bot):
                 CREATE TABLE IF NOT EXISTS Playlists (
                     id SERIAL PRIMARY KEY,
                     name TEXT,
-                    owner INTEGER,
+                    owner BIGINT,
                     uses INTEGER,
                     UNIQUE(name, owner)
                 );
@@ -79,7 +79,7 @@ class Bot(commands.Bot):
                 CREATE TABLE IF NOT EXISTS PlaylistTrackRelation (
                     id SERIAL PRIMARY KEY,
                     track TEXT REFERENCES Tracks(id),
-                    playlist INTEGER REFERENCES Playlists(id),
+                    playlist INTEGER REFERENCES Playlists(id) ON DELETE CASCADE,
                     UNIQUE(track, playlist)
                 );
                 """

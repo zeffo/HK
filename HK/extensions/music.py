@@ -187,9 +187,38 @@ class Playlist:
 
     async def new(self, name, owner, tracks):
         async with self.pool.acquire() as con:
-            _id = (await con.fetch('INSERT INTO Playlists (name, owner) VALUES ($1, $2) RETURNING id;', name, owner))[0]["id"]
+            await con.execute('INSERT INTO Playlists (name, owner) VALUES ($1, $2) ON CONFLICT DO NOTHING;', name, owner)
+            _id = (await con.fetch('SELECT id FROM Playlists WHERE name=$1 AND owner=$2;', name, owner))[0]['id']
             await con.executemany('INSERT INTO Tracks VALUES ($1, $2, $3) ON CONFLICT DO NOTHING', tracks)
-            await con.executemany('INSERT INTO PlaylistTrackRelation (track, playlist) VALUES ($1, $2)', [(t.id, _id) for t in tracks])
+            await con.executemany('INSERT INTO PlaylistTrackRelation (track, playlist) VALUES ($1, $2) ON CONFLICT DO NOTHING', [(t.id, _id) for t in tracks])
+
+    async def remove(self, name, owner, tracks):
+        async with self.pool.acquire() as con:
+            if data := await con.fetch('SELECT id FROM Playlists WHERE name=$1 AND owner=$2;', name, owner):
+                _id = data[0]['id']
+                return await con.fetch('DELETE FROM PlaylistTrackRelation WHERE track = ANY($1::text[]) AND playlist = $2 RETURNING *', [t.id for t in tracks], _id)
+            else:
+                raise MusicError("That playlist doesn't exist!")
+
+    async def delete(self, name, owner):
+        async with self.pool.acquire() as con:
+            if _id := await con.fetch('DELETE FROM Playlists WHERE name=$1 AND owner=$2 RETURNING id;', name, owner):
+                await con.execute('DELETE FROM PlaylistTrackRelation WHERE playlist=$1', _id[0]["id"])
+            else:
+                raise MusicError("That playlist doesn't exist!")
+        
+    @staticmethod
+    async def parse(tracks):
+        parsed, err = [], []
+        for track in tracks:
+            if match := re.match(YTDL.VIDEO, track):
+                parsed.append(match.groups()[0])
+            else:
+                err.append(track)
+        if not parsed:
+            raise MusicError("Couldn't parse those videos!")
+        parsed = await asyncio.gather(*[YTDL()._get(i) for i in parsed])
+        return [Playlist.track(d['id'], d['title'], d['url']) for d in parsed], err
 
 
 class Music(commands.Cog):
@@ -314,6 +343,26 @@ class Music(commands.Cog):
         queue.repeat = not queue.repeat
         await ctx.send(f"Queue looping {'enabled' if queue.repeat else 'disabled'}.")
 
+    @commands.command()
+    async def playlists(self, ctx):
+        async with self.bot.pool.acquire() as con:
+            playlists = await con.fetch('SELECT name FROM Playlists WHERE owner=$1', ctx.author.id)
+            tracks = await con.fetch('SELECT COUNT(*) FROM (SELECT DISTINCT Tracks.id FROM PlaylistTrackRelation INNER JOIN Playlists ON playlist=Playlists.id INNER JOIN Tracks ON track=Tracks.id WHERE Playlists.owner=$1) AS temp;', ctx.author.id)
+            if not playlists:
+                raise MusicError("You haven't created any playlists!")
+            embed = discord.Embed(title=f"{ctx.author.name}'s Playlists")
+            embed.description = f"{len(playlists)} playlists, {tracks[0]['count']} unique tracks."
+            units = [Unit(embed=embed)]
+            for i in range(0, len(playlists), 10):
+                e = discord.Embed()
+                chunk = playlists[i:i+10]
+                desc = "\n".join(f"{x+i}. {p['name']}" for x, p in enumerate(chunk))
+                e.description = f"```md\n{desc}\n```"
+                units.append(Unit(embed=e))
+            await ctx.send(embed=embed, view=Paginator(ctx, units=units))
+
+
+
     @commands.group(invoke_without_command=True)
     async def playlist(self, ctx, author: Optional[discord.Member], *, name):
         author = author or ctx.author
@@ -342,23 +391,33 @@ class Music(commands.Cog):
 
     @playlist.command()
     async def create(self, ctx, name, *tracks):
-        parsed, err = [], []
-        for track in tracks:
-            if match := re.match(YTDL.VIDEO, track):
-                parsed.append(await YTDL()._get(match.groups()[0]))
-            else:
-                err.append(track)
-        tracks = [Playlist.track(d['id'], d['title'], d['url']) for d in parsed]
-        await Playlist(self.bot.pool).new(name, ctx.author.id, tracks)
-        ret = f"Created Playlist {name} successfully with {len(parsed)}/{len(tracks)} tracks. "
+        m = await ctx.send("Parsing tracks, please wait...")
+        parsed, err = await Playlist.parse(tracks)
+        await Playlist(self.bot.pool).new(name, ctx.author.id, parsed)
+        ret = f"Created Playlist {name} with {len(parsed)}/{len(tracks)} tracks. "
         if err:
             ret += f"I was unable to parse the following: {', '.join(err)}"
-        await ctx.send(f"Created Playlist {name} successfully with {len(parsed)}/{len(tracks)} tracks.")
+        await m.edit(content=ret)
 
+    @playlist.command()
+    async def add(self, ctx, name, *tracks):
+        parsed, err = await Playlist.parse(tracks)
+        await Playlist(self.bot.pool).new(name, ctx.author.id, parsed)
+        ret = f"Edited Playlist {name}, added {len(parsed)}/{len(tracks)} tracks. "
+        if err:
+            ret += f"I was unable to parse the following: {', '.join(err)}"
+        await ctx.send(ret)
 
+    @playlist.command()
+    async def remove(self, ctx, name, *tracks):
+        parsed, err = await Playlist.parse(tracks)
+        deleted = await Playlist(self.bot.pool).remove(name, ctx.author.id, parsed)
+        await ctx.send(f"Deleted {len(deleted)} tracks.")
 
-        
-
+    @playlist.command()
+    async def delete(self, ctx, *, name):
+        await Playlist(self.bot.pool).delete(name, ctx.author.id)
+        await ctx.send(f"Deleted playlist {name}.")
         
 
 def setup(bot):
