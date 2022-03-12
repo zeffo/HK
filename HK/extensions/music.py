@@ -379,8 +379,8 @@ class Music(commands.Cog):
             units.append(Unit(embed=e))
         await ctx.send(embed=embed, view=Paginator(ctx, units=units))
 
-    @playlist.command(description="Plays a playlist.")
-    async def play(self, ctx, author: Optional[discord.Member], *, name):
+    @playlist.command(description="Plays a playlist.", name="play")
+    async def _play(self, ctx, author: Optional[discord.Member], *, name):
         author = author or ctx.author
         _, tracks = await Playlist(self.bot.pool).find(name, author.id)
         queue, _ = await self.prepare(ctx)
