@@ -2,7 +2,6 @@ from typing import Optional
 import discord
 import asyncio
 from discord.ext import commands
-from numpy import isin
 import yt_dlp
 from ..paginator import Paginator, Unit
 from os import getenv
