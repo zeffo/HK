@@ -382,6 +382,7 @@ class Music(commands.Cog):
 
     @playlist.command(description="Plays a playlist.", name="play")
     async def _play(self, ctx, author: Optional[discord.Member], *, name):
+        await ctx.trigger_typing()
         author = author or ctx.author
         _, tracks = await Playlist(self.bot.pool).find(name, author.id)
         queue, _ = await self.prepare(ctx)
@@ -393,6 +394,7 @@ class Music(commands.Cog):
     @playlist.command(description="Creates a playlist.")
     async def create(self, ctx, name, *tracks):
         m = await ctx.send("Parsing tracks, please wait...")
+        await ctx.trigger_typing()
         parsed, err = await Playlist.parse(tracks)
         await Playlist(self.bot.pool).new(name, ctx.author.id, parsed)
         ret = f"Created Playlist {name} with {len(parsed)}/{len(tracks)} tracks. "
