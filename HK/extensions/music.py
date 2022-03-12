@@ -345,6 +345,7 @@ class Music(commands.Cog):
 
     @commands.command(description="Lists your playlists, or of a member if provided.")
     async def playlists(self, ctx, author: Optional[discord.Member]):
+        author = author or ctx.author
         async with self.bot.pool.acquire() as con:
             playlists = await con.fetch('SELECT name FROM Playlists WHERE owner=$1', author.id)
             tracks = await con.fetch('SELECT COUNT(*) FROM (SELECT DISTINCT Tracks.id FROM PlaylistTrackRelation INNER JOIN Playlists ON playlist=Playlists.id INNER JOIN Tracks ON track=Tracks.id WHERE Playlists.owner=$1) AS temp;', author.id)
@@ -360,7 +361,6 @@ class Music(commands.Cog):
                 e.description = f"```md\n{desc}\n```"
                 units.append(Unit(embed=e))
             await ctx.send(embed=embed, view=Paginator(ctx, units=units))
-
 
 
     @commands.group(invoke_without_command=True, description="Displays the contents of a playlist.")
