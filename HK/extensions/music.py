@@ -45,7 +45,7 @@ class Track:
 class YTDL(yt_dlp.YoutubeDL):
     SEARCH = f"https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q={{0}}&type=video&key={getenv('YOUTUBE_API_KEY')}"
     PARAMS = {
-            'format': 'bestaudio',
+            'format': 'best/bestaudio',
             'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
             'restrictfilenames': True,
             'noplaylist': False,
