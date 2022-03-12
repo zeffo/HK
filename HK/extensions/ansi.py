@@ -2,28 +2,25 @@ import discord
 from discord.ext import commands
 import re
 
+
 class ANSIstr(str):
     ESC = "\u001b"
     BASE = ESC + "[{format};{color}m"
-    FORMATS = {
-        'normal': 0,
-        'bold': 1,
-        'underline': 4
-    }
+    FORMATS = {"normal": 0, "bold": 1, "underline": 4}
     COLORS = {
-        'black': 30,
-        'red': 31,
-        'green': 32,
-        'yellow': 33,
-        'blue': 34,
-        'pink': 35,
-        'cyan': 36,
-        'white': 37,
+        "black": 30,
+        "red": 31,
+        "green": 32,
+        "yellow": 33,
+        "blue": 34,
+        "pink": 35,
+        "cyan": 36,
+        "white": 37,
     }
     temp = {}
     for color, value in COLORS.items():
-        temp['bg'+color] = value+10
-        temp['br'+color] = value+60
+        temp["bg" + color] = value + 10
+        temp["br" + color] = value + 60
     COLORS.update(temp)
     del temp
 
@@ -31,10 +28,8 @@ class ANSIstr(str):
     ALL.update(COLORS)
     ALL.update(FORMATS)
 
-
-
     def transform(self):
-        if not (self[0] == '{' and self[-1] == '}'):
+        if not (self[0] == "{" and self[-1] == "}"):
             return str(self)
         start = f"{self.ESC}["
         inner = self[1:-1].split()
@@ -46,25 +41,26 @@ class ANSIstr(str):
         return start
 
     def split(self):
-        tokens = (self.__class__(s.strip()) for s in re.split(r' ?({.*?})', self))
+        tokens = (self.__class__(s.strip()) for s in re.split(r" ?({.*?})", self))
         return [t for t in tokens if t]
 
+
 class ANSIBuilder(commands.Cog):
-    
-    
     def __init__(self, bot):
         self.bot = bot
 
     @commands.group(invoke_without_command=True)
     async def ansi(self, ctx):
-        await ctx.send(f"Formats: {', '.join(ANSIstr.FORMATS)}, Colors: {', '.join(ANSIstr.COLORS)}")
+        await ctx.send(
+            f"Formats: {', '.join(ANSIstr.FORMATS)}, Colors: {', '.join(ANSIstr.COLORS)}"
+        )
 
     @ansi.command()
     async def escape(self, ctx):
         await ctx.send(f"`{ANSIstr.ESC}`")
 
     def prepare(self, content):
-        content = ANSIstr(content.strip('```').lstrip('ansi')).split()
+        content = ANSIstr(content.strip("```").lstrip("ansi")).split()
         content = [s.transform() for s in content]
         return content
 

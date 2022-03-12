@@ -28,15 +28,15 @@ class Context(commands.Context):
     async def connect(self):
         if self.voice_client:
             return self.voice_client
-        elif (vc := self.author.voice.channel):
+        elif vc := self.author.voice.channel:
             return await vc.connect()
 
     async def send(self, *args, **kwargs):
-        if 'embed' in kwargs:
-            kwargs['embed'].color = self.bot.color
-        
+        if "embed" in kwargs:
+            kwargs["embed"].color = self.bot.color
+
         return await super().send(*args, **kwargs)
-        
+
 
 class Bot(commands.Bot):
     pool: Optional[asyncpg.pool.Pool] = None
@@ -102,7 +102,7 @@ class Bot(commands.Bot):
                 traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
         for ex in self.settings.get("extensions", ()):
             self.load_extension(ex)
-        await super().start(getenv("TOKEN"))    #type: ignore
+        await super().start(getenv("TOKEN"))  # type: ignore
 
     async def stop(self):
         await self._session.close()
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     bot = Bot(
         settings.get("prefix", "hk "),
         allowed_mentions=AllowedMentions(everyone=False),
-        intents=Intents._from_value(settings.get('intents', 131071)),
+        intents=Intents._from_value(settings.get("intents", 131071)),
         loop=loop,
     )
 

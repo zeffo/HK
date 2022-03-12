@@ -34,9 +34,15 @@ class Tags(commands.Cog):
     async def delete(self, ctx, *, keyword: str):
         """Delete a tag"""
         async with self.pool.acquire() as con:
-            result = await con.fetch("DELETE FROM Tags WHERE keyword=$1 RETURNING *;", keyword)
-        await ctx.send(f"Statement: Deleted tag {keyword} successfully." if result else "Statement: Could not find that tag.")
-    
+            result = await con.fetch(
+                "DELETE FROM Tags WHERE keyword=$1 RETURNING *;", keyword
+            )
+        await ctx.send(
+            f"Statement: Deleted tag {keyword} successfully."
+            if result
+            else "Statement: Could not find that tag."
+        )
+
     @tag.command()
     async def edit(self, ctx, keyword, *, meta):
         """Edit a tag's contents"""
@@ -44,7 +50,11 @@ class Tags(commands.Cog):
             result = await con.execute(
                 "UPDATE Tags SET meta=$1 WHERE keyword=$2 RETURNING *", meta, keyword
             )
-        await ctx.send(f"Statement: Updated {keyword} successfully." if result else "Statement: Could not find that tag.")
+        await ctx.send(
+            f"Statement: Updated {keyword} successfully."
+            if result
+            else "Statement: Could not find that tag."
+        )
 
     @commands.command()
     async def tags(self, ctx):

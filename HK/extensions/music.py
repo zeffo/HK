@@ -10,8 +10,19 @@ from io import StringIO
 import json
 from collections import namedtuple
 
+
 class Track:
-    __slots__ = ('id', 'data', 'title', 'description', 'duration', 'uploader', 'url', 'ctx')
+    __slots__ = (
+        "id",
+        "data",
+        "title",
+        "description",
+        "duration",
+        "uploader",
+        "url",
+        "ctx",
+    )
+
     def __init__(self, _id, data=None):
         self.id = _id
         self.data = data
@@ -21,23 +32,30 @@ class Track:
 
     @property
     def thumbnail(self):
-        return self.data['thumbnails'][-1]["url"]
+        return self.data["thumbnails"][-1]["url"]
 
     @property
     def stream(self):
-        return self.data['url']
+        return self.data["url"]
 
     def __matmul__(self, ytdl):
         async def update():
             self.data = await ytdl._get(self.id)
+
         return update()
 
     def embed(self):
-        e = discord.Embed(title=self.title, url=self.data.get('webpage_url', discord.embeds.EmptyEmbed))
+        e = discord.Embed(
+            title=self.title,
+            url=self.data.get("webpage_url", discord.embeds.EmptyEmbed),
+        )
         e.set_author(name="Now Playing")
         e.set_thumbnail(url=self.thumbnail)
         if self.ctx:
-            e.set_footer(text=f"Requested by {self.ctx.author}", icon_url=self.ctx.author.display_avatar.url)
+            e.set_footer(
+                text=f"Requested by {self.ctx.author}",
+                icon_url=self.ctx.author.display_avatar.url,
+            )
 
         return e
 
@@ -45,25 +63,25 @@ class Track:
 class YTDL(yt_dlp.YoutubeDL):
     SEARCH = f"https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q={{0}}&type=video&key={getenv('YOUTUBE_API_KEY')}"
     PARAMS = {
-            'format': 'best/bestaudio',
-            'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
-            'restrictfilenames': True,
-            'noplaylist': False,
-            'nocheckcertificate': True,
-            'ignoreerrors': False,
-            'logtostderr': False,
-            'quiet': True,
-            'no_warnings': True,
-            'default_search': 'auto',
-            'source_address': '0.0.0.0',
-        }
-    VIDEO = r'^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$'
-    PLAYLIST = r'^.*(youtu.be\/|list=)([^#\&\?]*).*'
+        "format": "best/bestaudio",
+        "outtmpl": "%(extractor)s-%(id)s-%(title)s.%(ext)s",
+        "restrictfilenames": True,
+        "noplaylist": False,
+        "nocheckcertificate": True,
+        "ignoreerrors": False,
+        "logtostderr": False,
+        "quiet": True,
+        "no_warnings": True,
+        "default_search": "auto",
+        "source_address": "0.0.0.0",
+    }
+    VIDEO = r"^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$"
+    PLAYLIST = r"^.*(youtu.be\/|list=)([^#\&\?]*).*"
 
     def __init__(self, fast=True):
         params = self.PARAMS
         if fast:
-            params.update({'extract_flat': True, 'skip_download': True})
+            params.update({"extract_flat": True, "skip_download": True})
         super().__init__(params)
 
     async def _get(self, url):
@@ -71,6 +89,7 @@ class YTDL(yt_dlp.YoutubeDL):
             with self as yd:
                 data = yd.extract_info(url, download=False)
             return data
+
         return await asyncio.get_running_loop().run_in_executor(None, to_thread)
 
     async def from_api(self, session, query):
@@ -82,31 +101,33 @@ class YTDL(yt_dlp.YoutubeDL):
     async def get(cls, query, session):
         if match := re.match(cls.VIDEO, query):
             data = await cls()._get(match.groups()[0])
-            return [Track(data['id'], data)]
+            return [Track(data["id"], data)]
         elif re.match(cls.PLAYLIST, query):
             data = await cls()._get(query)
-            return [Track(d['id'], d) for d in data['entries']]
+            return [Track(d["id"], d) for d in data["entries"]]
         else:
             data = await cls().from_api(session, query)
-            return [Track(data['id'], data)]
+            return [Track(data["id"], data)]
 
 
 class Audio(discord.PCMVolumeTransformer):
     def __init__(self, source, volume=0.5):
         super().__init__(source, volume)
         self.done = 0
-    
+
     def read(self):
         self.done += 20
         return super().read()
-        
+
+
 class Lock(asyncio.Lock):
     track = None
 
     async def acquire(self, track):
         self.track = track
         await super().acquire()
-            
+
+
 class Queue(asyncio.Queue):
     def __init__(self, guild: discord.Guild, loop, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -130,7 +151,16 @@ class Queue(asyncio.Queue):
             await self.lock.acquire(track)
             await (track @ YTDL(fast=False))
             await track.ctx.send(embed=track.embed())
-            source = Audio(discord.FFmpegPCMAudio(track.stream, **{"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5","options": "-vn"}), volume=self.volume)
+            source = Audio(
+                discord.FFmpegPCMAudio(
+                    track.stream,
+                    **{
+                        "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
+                        "options": "-vn",
+                    },
+                ),
+                volume=self.volume,
+            )
             vc.play(source, after=lambda e: self.loop.create_task(self.next(e)))
 
     def set_volume(self, volume):
@@ -141,7 +171,7 @@ class Queue(asyncio.Queue):
     async def next(self, error=None):
         self.lock.release()
         await self.play()
-    
+
     async def add(self, tracks):
         for track in tracks:
             self.put_nowait(track)
@@ -152,61 +182,94 @@ class Queue(asyncio.Queue):
             embed.set_author(name="Queued")
             await track.ctx.send(embed=embed)
         elif len(tracks) > 1:
-            await track.ctx.send(embed=discord.Embed(title=f"Queued {len(tracks)} items!"))
+            await track.ctx.send(
+                embed=discord.Embed(title=f"Queued {len(tracks)} items!")
+            )
 
         if len(self._queue) == len(tracks) and not self.lock.locked():
             await self.play()
-        
+
+
 class MusicError(Exception):
     """Base exception for this extension"""
 
+
 class Playlist:
-    playlist = namedtuple('Playlist', ['name', 'owner', 'uses'])
-    track = namedtuple('Track', ['id', 'title', 'stream'])
+    playlist = namedtuple("Playlist", ["name", "owner", "uses"])
+    track = namedtuple("Track", ["id", "title", "stream"])
+
     def __init__(self, pool):
         self.pool = pool
 
     async def find(self, name, owner):
         async with self.pool.acquire() as con:
-            data = await con.fetch('''
+            data = await con.fetch(
+                """
                 SELECT Playlists.name, Playlists.owner, Playlists.uses, Tracks.title, Tracks.stream, Tracks.id
                 FROM PlaylistTrackRelation 
                 INNER JOIN Playlists ON Playlists.id=playlist
                 INNER JOIN Tracks ON Tracks.id=track
                 WHERE Playlists.name=$1 AND Playlists.owner=$2;
-            ''', 
-            name, owner)
-        
+            """,
+                name,
+                owner,
+            )
+
         if data:
             rec = data[0]
             playlist = self.playlist(rec["name"], rec["owner"], rec["uses"])
-            tracks = [self.track(d['id'], d['title'], d['stream']) for d in data]
+            tracks = [self.track(d["id"], d["title"], d["stream"]) for d in data]
             return playlist, tracks
-        
+
         raise MusicError("That playlist doesn't exist!")
 
     async def new(self, name, owner, tracks):
         async with self.pool.acquire() as con:
-            await con.execute('INSERT INTO Playlists (name, owner) VALUES ($1, $2) ON CONFLICT DO NOTHING;', name, owner)
-            _id = (await con.fetch('SELECT id FROM Playlists WHERE name=$1 AND owner=$2;', name, owner))[0]['id']
-            await con.executemany('INSERT INTO Tracks VALUES ($1, $2, $3) ON CONFLICT DO NOTHING', tracks)
-            await con.executemany('INSERT INTO PlaylistTrackRelation (track, playlist) VALUES ($1, $2) ON CONFLICT DO NOTHING', [(t.id, _id) for t in tracks])
+            await con.execute(
+                "INSERT INTO Playlists (name, owner) VALUES ($1, $2) ON CONFLICT DO NOTHING;",
+                name,
+                owner,
+            )
+            _id = (
+                await con.fetch(
+                    "SELECT id FROM Playlists WHERE name=$1 AND owner=$2;", name, owner
+                )
+            )[0]["id"]
+            await con.executemany(
+                "INSERT INTO Tracks VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", tracks
+            )
+            await con.executemany(
+                "INSERT INTO PlaylistTrackRelation (track, playlist) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+                [(t.id, _id) for t in tracks],
+            )
 
     async def remove(self, name, owner, tracks):
         async with self.pool.acquire() as con:
-            if data := await con.fetch('SELECT id FROM Playlists WHERE name=$1 AND owner=$2;', name, owner):
-                _id = data[0]['id']
-                return await con.fetch('DELETE FROM PlaylistTrackRelation WHERE track = ANY($1::text[]) AND playlist = $2 RETURNING *', [t.id for t in tracks], _id)
+            if data := await con.fetch(
+                "SELECT id FROM Playlists WHERE name=$1 AND owner=$2;", name, owner
+            ):
+                _id = data[0]["id"]
+                return await con.fetch(
+                    "DELETE FROM PlaylistTrackRelation WHERE track = ANY($1::text[]) AND playlist = $2 RETURNING *",
+                    [t.id for t in tracks],
+                    _id,
+                )
             else:
                 raise MusicError("That playlist doesn't exist!")
 
     async def delete(self, name, owner):
         async with self.pool.acquire() as con:
-            if _id := await con.fetch('DELETE FROM Playlists WHERE name=$1 AND owner=$2 RETURNING id;', name, owner):
-                await con.execute('DELETE FROM PlaylistTrackRelation WHERE playlist=$1', _id[0]["id"])
+            if _id := await con.fetch(
+                "DELETE FROM Playlists WHERE name=$1 AND owner=$2 RETURNING id;",
+                name,
+                owner,
+            ):
+                await con.execute(
+                    "DELETE FROM PlaylistTrackRelation WHERE playlist=$1", _id[0]["id"]
+                )
             else:
                 raise MusicError("That playlist doesn't exist!")
-        
+
     @staticmethod
     async def parse(tracks):
         parsed, err = [], []
@@ -218,7 +281,7 @@ class Playlist:
         if not parsed:
             raise MusicError("Couldn't parse those videos!")
         parsed = await asyncio.gather(*[YTDL()._get(i) for i in parsed])
-        return [Playlist.track(d['id'], d['title'], d['url']) for d in parsed], err
+        return [Playlist.track(d["id"], d["title"], d["url"]) for d in parsed], err
 
 
 class Music(commands.Cog):
@@ -241,9 +304,13 @@ class Music(commands.Cog):
         if isinstance(error, MusicError):
             await ctx.send(embed=discord.Embed(description=error))
         elif isinstance(error, KeyError):
-            await ctx.send(embed=discord.Embed(description="Couldn't retrieve that song!"))
+            await ctx.send(
+                embed=discord.Embed(description="Couldn't retrieve that song!")
+            )
         elif isinstance(yt_dlp.utils.DownloadError):
-            await ctx.send(embed=discord.Embed(description="Couldn't download that song!"))
+            await ctx.send(
+                embed=discord.Embed(description="Couldn't download that song!")
+            )
         else:
             ctx.command = None  # Propagate error to Errors.on_command_error
 
@@ -273,15 +340,15 @@ class Music(commands.Cog):
 
         for i in range(0, len(items), 10):
             embed = discord.Embed(title="Queue")
-            chunk = items[i:i+10]
+            chunk = items[i : i + 10]
             tracks = "\n".join([f"{x+i}. {t.title}" for x, t in enumerate(chunk)])
             embed.description = f"```md\n{tracks}```"
             units.append(Unit(embed=embed))
 
         if queue.repeat:
             for unit in units:
-                unit.embed.set_footer(text='(Loop enabled)')
-        
+                unit.embed.set_footer(text="(Loop enabled)")
+
         if len(units) == 1:
             await ctx.send(embed=units[0].embed)
         elif len(units) > 1:
@@ -289,7 +356,9 @@ class Music(commands.Cog):
         else:
             await ctx.send("The queue is empty!")
 
-    @commands.command(description="Disconnects the bot from the VC and resets the queue.")
+    @commands.command(
+        description="Disconnects the bot from the VC and resets the queue."
+    )
     async def dc(self, ctx):
         if vc := ctx.voice_client:
             vc.stop()
@@ -300,19 +369,22 @@ class Music(commands.Cog):
     @commands.command(description="Sets to the volume (1-100)")
     async def volume(self, ctx, volume: float):
         queue = self[ctx.guild]
-        queue.set_volume(volume/100)
+        queue.set_volume(volume / 100)
 
     @commands.command(description="Sends a raw payload, for debugging purposes.")
     async def raw(self, ctx, *, query):
         yd = YTDL(fast=False)
         session = self.bot._session
-        if match := re.match(r'^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$', query):
+        if match := re.match(
+            r"^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$",
+            query,
+        ):
             data = await yd._get(match.groups()[0])
-        elif re.match(r'^.*(youtu.be\/|list=)([^#\&\?]*).*', query):
+        elif re.match(r"^.*(youtu.be\/|list=)([^#\&\?]*).*", query):
             data = await yd._get(query)
         else:
             data = await yd.from_api(session, query)
-        
+
         data = [data["url"], data["title"], data["id"]]
         buffer = StringIO(json.dumps(data, indent=4))
         await ctx.send(file=discord.File(buffer, "data.json"))
@@ -327,7 +399,9 @@ class Music(commands.Cog):
         if ctx.voice_client:
             ctx.voice_client.resume()
 
-    @commands.command(description="Removes the song at the given position from the queue.")
+    @commands.command(
+        description="Removes the song at the given position from the queue."
+    )
     async def dequeue(self, ctx, index: int):
         queue = self[ctx.guild]._queue
         if index >= len(queue):
@@ -348,23 +422,31 @@ class Music(commands.Cog):
     async def playlists(self, ctx, author: Optional[discord.Member]):
         author = author or ctx.author
         async with self.bot.pool.acquire() as con:
-            playlists = await con.fetch('SELECT name FROM Playlists WHERE owner=$1', author.id)
-            tracks = await con.fetch('SELECT COUNT(*) FROM (SELECT DISTINCT Tracks.id FROM PlaylistTrackRelation INNER JOIN Playlists ON playlist=Playlists.id INNER JOIN Tracks ON track=Tracks.id WHERE Playlists.owner=$1) AS temp;', author.id)
+            playlists = await con.fetch(
+                "SELECT name FROM Playlists WHERE owner=$1", author.id
+            )
+            tracks = await con.fetch(
+                "SELECT COUNT(*) FROM (SELECT DISTINCT Tracks.id FROM PlaylistTrackRelation INNER JOIN Playlists ON playlist=Playlists.id INNER JOIN Tracks ON track=Tracks.id WHERE Playlists.owner=$1) AS temp;",
+                author.id,
+            )
             if not playlists:
                 raise MusicError("You haven't created any playlists!")
             embed = discord.Embed(title=f"{author.name}'s Playlists")
-            embed.description = f"{len(playlists)} playlists, {tracks[0]['count']} unique tracks."
+            embed.description = (
+                f"{len(playlists)} playlists, {tracks[0]['count']} unique tracks."
+            )
             units = [Unit(embed=embed)]
             for i in range(0, len(playlists), 10):
                 e = discord.Embed()
-                chunk = playlists[i:i+10]
+                chunk = playlists[i : i + 10]
                 desc = "\n".join(f"{x+i}. {p['name']}" for x, p in enumerate(chunk))
                 e.description = f"```md\n{desc}\n```"
                 units.append(Unit(embed=e))
             await ctx.send(embed=embed, view=Paginator(ctx, units=units))
 
-
-    @commands.group(invoke_without_command=True, description="Displays the contents of a playlist.")
+    @commands.group(
+        invoke_without_command=True, description="Displays the contents of a playlist."
+    )
     async def playlist(self, ctx, author: Optional[discord.Member], *, name):
         author = author or ctx.author
         playlist, tracks = await Playlist(self.bot.pool).find(name, author.id)
@@ -373,7 +455,7 @@ class Music(commands.Cog):
         embed.description = f"Tracks: {len(tracks)}"
         units = [Unit(embed=embed)]
         for i in range(0, len(tracks), 10):
-            chunk = tracks[i:i+10]
+            chunk = tracks[i : i + 10]
             e = discord.Embed(title="Tracks")
             desc = "\n".join(f"{x+i}. {t.title}" for x, t in enumerate(chunk))
             e.description = f"```md\n{desc}\n```"
@@ -386,7 +468,10 @@ class Music(commands.Cog):
         author = author or ctx.author
         _, tracks = await Playlist(self.bot.pool).find(name, author.id)
         queue, _ = await self.prepare(ctx)
-        tracks = [Track(d['id'], d) for d in await asyncio.gather(*[YTDL()._get(t.id) for t in tracks])]
+        tracks = [
+            Track(d["id"], d)
+            for d in await asyncio.gather(*[YTDL()._get(t.id) for t in tracks])
+        ]
         for track in tracks:
             track.ctx = ctx
         await queue.add(tracks)
@@ -421,7 +506,7 @@ class Music(commands.Cog):
     async def delete(self, ctx, *, name):
         await Playlist(self.bot.pool).delete(name, ctx.author.id)
         await ctx.send(f"Deleted playlist {name}.")
-        
+
 
 def setup(bot):
     bot.add_cog(Music(bot))
