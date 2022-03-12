@@ -246,7 +246,7 @@ class Music(commands.Cog):
             ctx.command = None
             await self.bot.get_cog('Errors').on_command_error(ctx, error)
 
-    @commands.command()
+    @commands.command(description="Plays a song from youtube.")
     async def play(self, ctx, *, query):
         queue, vc = await self.prepare(ctx)
         tracks = await YTDL.get(query, self.bot._session)
@@ -254,12 +254,12 @@ class Music(commands.Cog):
             track.ctx = ctx
         await queue.add(tracks)
 
-    @commands.command()
+    @commands.command(description="Skips the current song.")
     async def skip(self, ctx):
         queue, vc = await self.prepare(ctx)
         vc.stop()
 
-    @commands.command()
+    @commands.command(description="Displays the enqueued songs.")
     async def queue(self, ctx):
         queue = self[ctx.guild]
         items = list(queue._queue)
@@ -288,7 +288,7 @@ class Music(commands.Cog):
         else:
             await ctx.send("The queue is empty!")
 
-    @commands.command()
+    @commands.command(description="Disconnects the bot from the VC and resets the queue.")
     async def dc(self, ctx):
         if vc := ctx.voice_client:
             vc.stop()
@@ -296,12 +296,12 @@ class Music(commands.Cog):
         if ctx.guild.id in self.queues:
             del self.queues[ctx.guild.id]
 
-    @commands.command()
+    @commands.command(description="Sets to the volume (1-100)")
     async def volume(self, ctx, volume: float):
         queue = self[ctx.guild]
         queue.set_volume(volume/100)
 
-    @commands.command()
+    @commands.command(description="Sends a raw payload, for debugging purposes.")
     async def raw(self, ctx, *, query):
         yd = YTDL(fast=False)
         session = self.bot._session
@@ -316,17 +316,17 @@ class Music(commands.Cog):
         buffer = StringIO(json.dumps(data, indent=4))
         await ctx.send(file=discord.File(buffer, "data.json"))
 
-    @commands.command()
+    @commands.command(description="Pauses the current song.")
     async def pause(self, ctx):
         if ctx.voice_client:
             ctx.voice_client.pause()
 
-    @commands.command()
+    @commands.command(description="Resumes the current song if paused.")
     async def resume(self, ctx):
         if ctx.voice_client:
             ctx.voice_client.resume()
 
-    @commands.command()
+    @commands.command(description="Removes the song at the given position from the queue.")
     async def dequeue(self, ctx, index: int):
         queue = self[ctx.guild]._queue
         if index >= len(queue):
@@ -337,20 +337,20 @@ class Music(commands.Cog):
             await ctx.send(embed=embed)
             del queue[index]
 
-    @commands.command()
+    @commands.command(description="Toggles looping for the queue.")
     async def loop(self, ctx):
         queue = self[ctx.guild]
         queue.repeat = not queue.repeat
         await ctx.send(f"Queue looping {'enabled' if queue.repeat else 'disabled'}.")
 
-    @commands.command()
-    async def playlists(self, ctx):
+    @commands.command(description="Lists your playlists, or of a member if provided.")
+    async def playlists(self, ctx, author: Optional[discord.Member]):
         async with self.bot.pool.acquire() as con:
-            playlists = await con.fetch('SELECT name FROM Playlists WHERE owner=$1', ctx.author.id)
-            tracks = await con.fetch('SELECT COUNT(*) FROM (SELECT DISTINCT Tracks.id FROM PlaylistTrackRelation INNER JOIN Playlists ON playlist=Playlists.id INNER JOIN Tracks ON track=Tracks.id WHERE Playlists.owner=$1) AS temp;', ctx.author.id)
+            playlists = await con.fetch('SELECT name FROM Playlists WHERE owner=$1', author.id)
+            tracks = await con.fetch('SELECT COUNT(*) FROM (SELECT DISTINCT Tracks.id FROM PlaylistTrackRelation INNER JOIN Playlists ON playlist=Playlists.id INNER JOIN Tracks ON track=Tracks.id WHERE Playlists.owner=$1) AS temp;', author.id)
             if not playlists:
                 raise MusicError("You haven't created any playlists!")
-            embed = discord.Embed(title=f"{ctx.author.name}'s Playlists")
+            embed = discord.Embed(title=f"{author.name}'s Playlists")
             embed.description = f"{len(playlists)} playlists, {tracks[0]['count']} unique tracks."
             units = [Unit(embed=embed)]
             for i in range(0, len(playlists), 10):
@@ -363,7 +363,7 @@ class Music(commands.Cog):
 
 
 
-    @commands.group(invoke_without_command=True)
+    @commands.group(invoke_without_command=True, description="Displays the contents of a playlist.")
     async def playlist(self, ctx, author: Optional[discord.Member], *, name):
         author = author or ctx.author
         playlist, tracks = await Playlist(self.bot.pool).find(name, author.id)
@@ -379,7 +379,7 @@ class Music(commands.Cog):
             units.append(Unit(embed=e))
         await ctx.send(embed=embed, view=Paginator(ctx, units=units))
 
-    @playlist.command()
+    @playlist.command(description="Plays a playlist.")
     async def play(self, ctx, author: Optional[discord.Member], *, name):
         author = author or ctx.author
         _, tracks = await Playlist(self.bot.pool).find(name, author.id)
@@ -389,7 +389,7 @@ class Music(commands.Cog):
             track.ctx = ctx
         await queue.add(tracks)
 
-    @playlist.command()
+    @playlist.command(description="Creates a playlist.")
     async def create(self, ctx, name, *tracks):
         m = await ctx.send("Parsing tracks, please wait...")
         parsed, err = await Playlist.parse(tracks)
@@ -399,7 +399,7 @@ class Music(commands.Cog):
             ret += f"I was unable to parse the following: {', '.join(err)}"
         await m.edit(content=ret)
 
-    @playlist.command()
+    @playlist.command(description="Adds tracks to a playlist.")
     async def add(self, ctx, name, *tracks):
         parsed, err = await Playlist.parse(tracks)
         await Playlist(self.bot.pool).new(name, ctx.author.id, parsed)
@@ -408,13 +408,13 @@ class Music(commands.Cog):
             ret += f"I was unable to parse the following: {', '.join(err)}"
         await ctx.send(ret)
 
-    @playlist.command()
+    @playlist.command(description="Removes tracks from a playlist.")
     async def remove(self, ctx, name, *tracks):
         parsed, err = await Playlist.parse(tracks)
         deleted = await Playlist(self.bot.pool).remove(name, ctx.author.id, parsed)
         await ctx.send(f"Deleted {len(deleted)} tracks.")
 
-    @playlist.command()
+    @playlist.command(description="Deletes a playlist.")
     async def delete(self, ctx, *, name):
         await Playlist(self.bot.pool).delete(name, ctx.author.id)
         await ctx.send(f"Deleted playlist {name}.")
