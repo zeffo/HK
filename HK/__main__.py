@@ -60,7 +60,29 @@ class Bot(commands.Bot):
             raise ValueError("Bot has no connection pool!")
         async with self.pool.acquire() as con:
             await con.execute(
-                "CREATE TABLE IF NOT EXISTS Tags (keyword TEXT Primary Key, meta TEXT);"
+                """
+                CREATE TABLE IF NOT EXISTS Tags (keyword TEXT Primary Key, meta TEXT);
+                CREATE TABLE IF NOT EXISTS Playlists (
+                    id SERIAL PRIMARY KEY,
+                    name TEXT,
+                    owner INTEGER,
+                    uses INTEGER,
+                    UNIQUE(name, owner)
+                );
+
+                CREATE TABLE IF NOT EXISTS Tracks (
+                    id TEXT PRIMARY KEY,
+                    title TEXT,
+                    stream TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS PlaylistTrackRelation (
+                    id SERIAL PRIMARY KEY,
+                    track TEXT REFERENCES Tracks(id),
+                    playlist INTEGER REFERENCES Playlists(id),
+                    UNIQUE(track, playlist)
+                );
+                """
             )
 
     async def on_message(self, message):

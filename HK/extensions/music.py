@@ -1,3 +1,4 @@
+from typing import Optional
 import discord
 import asyncio
 from discord.ext import commands
@@ -7,6 +8,7 @@ from os import getenv
 import re
 from io import StringIO
 import json
+from collections import namedtuple
 
 class Track:
     __slots__ = ('id', 'data', 'title', 'description', 'duration', 'uploader', 'url', 'ctx')
@@ -55,6 +57,8 @@ class YTDL(yt_dlp.YoutubeDL):
             'default_search': 'auto',
             'source_address': '0.0.0.0',
         }
+    VIDEO = r'^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$'
+    PLAYLIST = r'^.*(youtu.be\/|list=)([^#\&\?]*).*'
 
     def __init__(self, fast=True):
         params = self.PARAMS
@@ -76,10 +80,10 @@ class YTDL(yt_dlp.YoutubeDL):
 
     @classmethod
     async def get(cls, query, session):
-        if match := re.match(r'^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$', query):
+        if match := re.match(cls.VIDEO, query):
             data = await cls()._get(match.groups()[0])
             return [Track(data['id'], data)]
-        elif re.match(r'^.*(youtu.be\/|list=)([^#\&\?]*).*', query):
+        elif re.match(cls.PLAYLIST, query):
             data = await cls()._get(query)
             return [Track(d['id'], d) for d in data['entries']]
         else:
@@ -152,11 +156,41 @@ class Queue(asyncio.Queue):
 
         if len(self._queue) == len(tracks) and not self.lock.locked():
             await self.play()
-
-
         
 class MusicError(Exception):
     """Base exception for this extension"""
+
+class Playlist:
+    playlist = namedtuple('Playlist', ['name', 'owner', 'uses'])
+    track = namedtuple('Track', ['id', 'title', 'stream'])
+    def __init__(self, pool):
+        self.pool = pool
+
+    async def find(self, name, owner):
+        async with self.pool.acquire() as con:
+            data = await con.fetch('''
+                SELECT Playlists.name, Playlists.owner, Playlists.uses, Tracks.title, Tracks.stream, Tracks.id
+                FROM PlaylistTrackRelation 
+                INNER JOIN Playlists ON Playlists.id=playlist
+                INNER JOIN Tracks ON Tracks.id=track
+                WHERE Playlists.name=$1 AND Playlists.owner=$2;
+            ''', 
+            name, owner)
+        
+        if data:
+            rec = data[0]
+            playlist = self.playlist(rec["name"], rec["owner"], rec["uses"])
+            tracks = [self.track(d['id'], d['title'], d['stream']) for d in data]
+            return playlist, tracks
+        
+        raise MusicError("That playlist doesn't exist!")
+
+    async def new(self, name, owner, tracks):
+        async with self.pool.acquire() as con:
+            _id = (await con.fetch('INSERT INTO Playlists (name, owner) VALUES ($1, $2) RETURNING id;', name, owner))[0]["id"]
+            await con.executemany('INSERT INTO Tracks VALUES ($1, $2, $3) ON CONFLICT DO NOTHING', tracks)
+            await con.executemany('INSERT INTO PlaylistTrackRelation (track, playlist) VALUES ($1, $2)', [(t.id, _id) for t in tracks])
+
 
 class Music(commands.Cog):
     def __init__(self, bot):
@@ -174,13 +208,14 @@ class Music(commands.Cog):
         return queue, vc
 
     async def cog_command_error(self, ctx, error) -> None:
+        error = getattr(error, "original", error)
         if isinstance(error, MusicError):
             await ctx.send(embed=discord.Embed(description=error))
         elif isinstance(error, KeyError):
             await ctx.send(embed=discord.Embed(description="Couldn't retrieve that song!"))
         else:
             ctx.command = None
-            self.bot.dispatch('command_error', ctx, error)
+            await self.bot.get_cog('Errors').on_command_error(ctx, error)
 
     @commands.command()
     async def play(self, ctx, *, query):
@@ -199,8 +234,8 @@ class Music(commands.Cog):
     async def queue(self, ctx):
         queue = self[ctx.guild]
         items = list(queue._queue)
-        units = []  
-        if np := queue.lock.track and (vc := ctx.guild.voice_client):
+        units = []
+        if (np := queue.lock.track) and (vc := ctx.guild.voice_client):
             e = np.embed()
             e.set_author(name="Now Playing: ")
             e.description = f"`{vc.source.done//1000}/{np.duration}s`"
@@ -247,6 +282,8 @@ class Music(commands.Cog):
             data = await yd._get(query)
         else:
             data = await yd.from_api(session, query)
+        
+        data = [data["url"], data["title"], data["id"]]
         buffer = StringIO(json.dumps(data, indent=4))
         await ctx.send(file=discord.File(buffer, "data.json"))
 
@@ -276,6 +313,52 @@ class Music(commands.Cog):
         queue = self[ctx.guild]
         queue.repeat = not queue.repeat
         await ctx.send(f"Queue looping {'enabled' if queue.repeat else 'disabled'}.")
+
+    @commands.group(invoke_without_command=True)
+    async def playlist(self, ctx, author: Optional[discord.Member], *, name):
+        author = author or ctx.author
+        playlist, tracks = await Playlist(self.bot.pool).find(name, author.id)
+        embed = discord.Embed(title=playlist.name)
+        embed.set_author(name=f"Playlist by {author.name}")
+        embed.description = f"Tracks: {len(tracks)}"
+        units = [Unit(embed=embed)]
+        for i in range(0, len(tracks), 10):
+            chunk = tracks[i:i+10]
+            e = discord.Embed(title="Tracks")
+            desc = "\n".join(f"{x+i}. {t.title}" for x, t in enumerate(chunk))
+            e.description = f"```md\n{desc}\n```"
+            units.append(Unit(embed=e))
+        await ctx.send(embed=embed, view=Paginator(ctx, units=units))
+
+    @playlist.command()
+    async def play(self, ctx, author: Optional[discord.Member], *, name):
+        author = author or ctx.author
+        _, tracks = await Playlist(self.bot.pool).find(name, author.id)
+        queue, _ = await self.prepare(ctx)
+        tracks = [Track(d['id'], d) for d in await asyncio.gather(*[YTDL()._get(t.id) for t in tracks])]
+        for track in tracks:
+            track.ctx = ctx
+        await queue.add(tracks)
+
+    @playlist.command()
+    async def create(self, ctx, name, *tracks):
+        parsed, err = [], []
+        for track in tracks:
+            if match := re.match(YTDL.VIDEO, track):
+                parsed.append(await YTDL()._get(match.groups()[0]))
+            else:
+                err.append(track)
+        tracks = [Playlist.track(d['id'], d['title'], d['url']) for d in parsed]
+        await Playlist(self.bot.pool).new(name, ctx.author.id, tracks)
+        ret = f"Created Playlist {name} successfully with {len(parsed)}/{len(tracks)} tracks. "
+        if err:
+            ret += f"I was unable to parse the following: {', '.join(err)}"
+        await ctx.send(f"Created Playlist {name} successfully with {len(parsed)}/{len(tracks)} tracks.")
+
+
+
+        
+
         
 
 def setup(bot):
