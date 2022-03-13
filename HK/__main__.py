@@ -33,6 +33,8 @@ class Context(commands.Context):
 
     async def send(self, *args, **kwargs):
         if "embed" in kwargs:
+            if isinstance(kwargs["embed"], str):
+                kwargs["embed"] = Embed(description=kwargs["embed"])
             kwargs["embed"].color = self.bot.color
 
         return await super().send(*args, **kwargs)

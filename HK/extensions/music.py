@@ -2,6 +2,7 @@ from typing import Optional
 import discord
 import asyncio
 from discord.ext import commands
+from urllib3 import Retry
 import yt_dlp
 from ..paginator import Paginator, Unit
 from os import getenv
@@ -189,10 +190,8 @@ class Queue(asyncio.Queue):
         if len(self._queue) == len(tracks) and not self.lock.locked():
             await self.play()
 
-
 class MusicError(Exception):
     """Base exception for this extension"""
-
 
 class Playlist:
     playlist = namedtuple("Playlist", ["name", "owner", "uses"])
@@ -478,14 +477,14 @@ class Music(commands.Cog):
 
     @playlist.command(description="Creates a playlist.")
     async def create(self, ctx, name, *tracks):
-        m = await ctx.send("Parsing tracks, please wait...")
+        m = await ctx.send(embed="Parsing tracks, please wait...")
         await ctx.trigger_typing()
         parsed, err = await Playlist.parse(tracks)
         await Playlist(self.bot.pool).new(name, ctx.author.id, parsed)
         ret = f"Created Playlist {name} with {len(parsed)}/{len(tracks)} tracks. "
         if err:
             ret += f"I was unable to parse the following: {', '.join(err)}"
-        await m.edit(content=ret)
+        await m.edit(embed=self.bot.embed(description=ret))
 
     @playlist.command(description="Adds tracks to a playlist.")
     async def add(self, ctx, name, *tracks):
@@ -494,18 +493,18 @@ class Music(commands.Cog):
         ret = f"Edited Playlist {name}, added {len(parsed)}/{len(tracks)} tracks. "
         if err:
             ret += f"I was unable to parse the following: {', '.join(err)}"
-        await ctx.send(ret)
+        await ctx.send(embed=ret)
 
     @playlist.command(description="Removes tracks from a playlist.")
     async def remove(self, ctx, name, *tracks):
         parsed, err = await Playlist.parse(tracks)
         deleted = await Playlist(self.bot.pool).remove(name, ctx.author.id, parsed)
-        await ctx.send(f"Deleted {len(deleted)} tracks.")
+        await ctx.send(embed=f"Deleted {len(deleted)} tracks.")
 
     @playlist.command(description="Deletes a playlist.")
     async def delete(self, ctx, *, name):
         await Playlist(self.bot.pool).delete(name, ctx.author.id)
-        await ctx.send(f"Deleted playlist {name}.")
+        await ctx.send(embed=f"Deleted playlist {name}.")
 
 
 def setup(bot):
