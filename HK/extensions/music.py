@@ -315,7 +315,8 @@ class Music(commands.Cog):
                 raise MusicError('You must be in a voice channel!')
             elif vc is not None and c != vc:
                 if len(vc.members) == 1:
-                    return await ctx.guild.voice_client.move_to(c)
+                    await ctx.guild.voice_client.move_to(c)
+                    return True
                 else:
                     raise MusicError('You must be in the same voice channel as the bot!')
             else:
