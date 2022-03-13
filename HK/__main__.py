@@ -68,7 +68,7 @@ class Bot(commands.Bot):
                     id SERIAL PRIMARY KEY,
                     name TEXT,
                     owner BIGINT,
-                    uses INTEGER,
+                    uses INTEGER DEFAULT 0,
                     UNIQUE(name, owner)
                 );
 

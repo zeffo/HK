@@ -201,21 +201,26 @@ class MusicError(Exception):
     """Base exception for this extension"""
 
 class Playlist:
-    playlist = namedtuple("Playlist", ["name", "owner", "uses"])
+    playlist = namedtuple("Playlist", ["id", "name", "owner", "uses"])
     track = namedtuple("Track", ["id", "title", "stream"])
 
     def __init__(self, pool):
         self.pool = pool
 
+    async def increment(self, pid):
+        async with self.pool.acquire() as con:
+            await con.execute('UPDATE Playlists SET uses=uses+1 WHERE id=$1', pid)
+
     async def find(self, name, owner):
         async with self.pool.acquire() as con:
             data = await con.fetch(
                 """
-                SELECT Playlists.name, Playlists.owner, Playlists.uses, Tracks.title, Tracks.stream, Tracks.id
+                SELECT Playlists.id AS pid, Playlists.name, Playlists.owner, Playlists.uses, Tracks.title, Tracks.stream, Tracks.id
                 FROM PlaylistTrackRelation 
                 INNER JOIN Playlists ON Playlists.id=playlist
                 INNER JOIN Tracks ON Tracks.id=track
-                WHERE Playlists.name=$1 AND Playlists.owner=$2;
+                WHERE Playlists.name=$1 AND Playlists.owner=$2
+                ORDER BY Playlists.uses DESC
             """,
                 name,
                 owner,
@@ -223,7 +228,7 @@ class Playlist:
 
         if data:
             rec = data[0]
-            playlist = self.playlist(rec["name"], rec["owner"], rec["uses"])
+            playlist = self.playlist(rec["pid"], rec["name"], rec["owner"], rec["uses"])
             tracks = [self.track(d["id"], d["title"], d["stream"]) for d in data]
             return playlist, tracks
 
@@ -433,9 +438,9 @@ class Music(commands.Cog):
         author = author or ctx.author
         async with self.bot.pool.acquire() as con:
             playlists = await con.fetch(
-                "SELECT name FROM Playlists WHERE owner=$1", author.id
+                "SELECT name, uses FROM Playlists WHERE owner=$1 ORDER BY uses DESC", author.id
             )
-            tracks = await con.fetch(
+            tracks = await con.fetchrow(
                 "SELECT COUNT(*) FROM (SELECT DISTINCT Tracks.id FROM PlaylistTrackRelation INNER JOIN Playlists ON playlist=Playlists.id INNER JOIN Tracks ON track=Tracks.id WHERE Playlists.owner=$1) AS temp;",
                 author.id,
             )
@@ -443,13 +448,13 @@ class Music(commands.Cog):
                 raise MusicError("You haven't created any playlists!")
             embed = discord.Embed(title=f"{author.name}'s Playlists")
             embed.description = (
-                f"{len(playlists)} playlists, {tracks[0]['count']} unique tracks."
+                f"{len(playlists)} playlists, {tracks['count']} unique tracks."
             )
             units = [Unit(embed=embed)]
             for i in range(0, len(playlists), 10):
                 e = discord.Embed()
                 chunk = playlists[i : i + 10]
-                desc = "\n".join(f"{x+i}. {p['name']}" for x, p in enumerate(chunk))
+                desc = "\n".join(f"{x+i}. {p['name']} | Played {p['uses']} times." for x, p in enumerate(chunk))
                 e.description = f"```md\n{desc}\n```"
                 units.append(Unit(embed=e))
             await ctx.send(embed=embed, view=Paginator(ctx, units=units))
@@ -462,7 +467,7 @@ class Music(commands.Cog):
         playlist, tracks = await Playlist(self.bot.pool).find(name, author.id)
         embed = discord.Embed(title=playlist.name)
         embed.set_author(name=f"Playlist by {author.name}")
-        embed.description = f"Tracks: {len(tracks)}"
+        embed.description = f"Tracks: {len(tracks)} | Played {playlist.uses} times."
         units = [Unit(embed=embed)]
         for i in range(0, len(tracks), 10):
             chunk = tracks[i : i + 10]
@@ -476,7 +481,7 @@ class Music(commands.Cog):
     async def _play(self, ctx, author: Optional[discord.Member], *, name):
         await ctx.trigger_typing()
         author = author or ctx.author
-        _, tracks = await Playlist(self.bot.pool).find(name, author.id)
+        playlist, tracks = await Playlist(self.bot.pool).find(name, author.id)
         queue, _ = await self.prepare(ctx)
         tracks = [
             Track(d["id"], d)
@@ -485,6 +490,7 @@ class Music(commands.Cog):
         for track in tracks:
             track.ctx = ctx
         await queue.add(tracks)
+        await Playlist(self.bot.pool).increment(playlist.id)
 
     @playlist.command(description="Creates a playlist.")
     async def create(self, ctx, name, *tracks):
