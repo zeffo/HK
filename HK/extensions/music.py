@@ -10,6 +10,9 @@ import re
 from io import StringIO
 import json
 from collections import namedtuple
+from logging import getLogger
+
+logger = getLogger("discord")
 
 
 class Track:
@@ -69,12 +72,13 @@ class YTDL(yt_dlp.YoutubeDL):
         "restrictfilenames": True,
         "noplaylist": False,
         "nocheckcertificate": True,
-        "ignoreerrors": False,
+        "ignoreerrors": True,
         "logtostderr": False,
         "quiet": True,
         "no_warnings": True,
         "default_search": "auto",
         "source_address": "0.0.0.0",
+        "logger": logger
     }
     VIDEO = r"^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$"
     PLAYLIST = r"^.*(youtu.be\/|list=)([^#\&\?]*).*"
@@ -105,7 +109,7 @@ class YTDL(yt_dlp.YoutubeDL):
             return [Track(data["id"], data)]
         elif re.match(cls.PLAYLIST, query):
             data = await cls()._get(query)
-            return [Track(d["id"], d) for d in data["entries"]]
+            return [Track(d["id"], d) for d in data["entries"] if d]
         else:
             data = await cls().from_api(session, query)
             return [Track(data["id"], data)]
@@ -127,6 +131,10 @@ class Lock(asyncio.Lock):
     async def acquire(self, track):
         self.track = track
         await super().acquire()
+
+    def release(self) -> None:
+        self.track = None
+        return super().release()
 
 
 class Queue(asyncio.Queue):
@@ -230,10 +238,10 @@ class Playlist:
                 owner,
             )
             _id = (
-                await con.fetch(
+                await con.fetchrow(
                     "SELECT id FROM Playlists WHERE name=$1 AND owner=$2;", name, owner
                 )
-            )[0]["id"]
+            )["id"]
             await con.executemany(
                 "INSERT INTO Tracks VALUES ($1, $2, $3) ON CONFLICT DO NOTHING", tracks
             )
@@ -244,10 +252,10 @@ class Playlist:
 
     async def remove(self, name, owner, tracks):
         async with self.pool.acquire() as con:
-            if data := await con.fetch(
+            if data := await con.fetchrow(
                 "SELECT id FROM Playlists WHERE name=$1 AND owner=$2;", name, owner
             ):
-                _id = data[0]["id"]
+                _id = data["id"]
                 return await con.fetch(
                     "DELETE FROM PlaylistTrackRelation WHERE track = ANY($1::text[]) AND playlist = $2 RETURNING *",
                     [t.id for t in tracks],
@@ -258,13 +266,13 @@ class Playlist:
 
     async def delete(self, name, owner):
         async with self.pool.acquire() as con:
-            if _id := await con.fetch(
+            if _id := await con.fetchrow(
                 "DELETE FROM Playlists WHERE name=$1 AND owner=$2 RETURNING id;",
                 name,
                 owner,
             ):
                 await con.execute(
-                    "DELETE FROM PlaylistTrackRelation WHERE playlist=$1", _id[0]["id"]
+                    "DELETE FROM PlaylistTrackRelation WHERE playlist=$1", _id["id"]
                 )
             else:
                 raise MusicError("That playlist doesn't exist!")
@@ -275,12 +283,16 @@ class Playlist:
         for track in tracks:
             if match := re.match(YTDL.VIDEO, track):
                 parsed.append(match.groups()[0])
+            elif re.match(YTDL.PLAYLIST, track):
+                data = await YTDL()._get(track)
+                for d in data["entries"]:
+                    parsed.append(d["id"])
             else:
                 err.append(track)
         if not parsed:
             raise MusicError("Couldn't parse those videos!")
         parsed = await asyncio.gather(*[YTDL()._get(i) for i in parsed])
-        return [Playlist.track(d["id"], d["title"], d["url"]) for d in parsed], err
+        return [Playlist.track(d["id"], d["title"], d["url"]) for d in parsed if d], err
 
 
 class Music(commands.Cog):
@@ -306,7 +318,7 @@ class Music(commands.Cog):
             await ctx.send(
                 embed=discord.Embed(description="Couldn't retrieve that song!")
             )
-        elif isinstance(yt_dlp.utils.DownloadError):
+        elif isinstance(error, yt_dlp.utils.DownloadError):
             await ctx.send(
                 embed=discord.Embed(description="Couldn't download that song!")
             )
@@ -481,7 +493,7 @@ class Music(commands.Cog):
         await ctx.trigger_typing()
         parsed, err = await Playlist.parse(tracks)
         await Playlist(self.bot.pool).new(name, ctx.author.id, parsed)
-        ret = f"Created Playlist {name} with {len(parsed)}/{len(tracks)} tracks. "
+        ret = f"Created Playlist {name} with {len(parsed)}/{len(parsed)+len(err)} tracks. "
         if err:
             ret += f"I was unable to parse the following: {', '.join(err)}"
         await m.edit(embed=self.bot.embed(description=ret))
@@ -490,7 +502,7 @@ class Music(commands.Cog):
     async def add(self, ctx, name, *tracks):
         parsed, err = await Playlist.parse(tracks)
         await Playlist(self.bot.pool).new(name, ctx.author.id, parsed)
-        ret = f"Edited Playlist {name}, added {len(parsed)}/{len(tracks)} tracks. "
+        ret = f"Edited Playlist {name}, added {len(parsed)}/{len(parsed)+len(err)} tracks. "
         if err:
             ret += f"I was unable to parse the following: {', '.join(err)}"
         await ctx.send(embed=ret)
