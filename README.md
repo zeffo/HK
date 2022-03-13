@@ -19,3 +19,8 @@ To add your own features, create extensions as shown in https://discordpy.readth
 # Type Safety
 
 too late for that...
+
+# Special Thanks
+To: <br>
+anand for providing invaluable advice and feedback, helping me with database schemas and setting up a VPS.
+
