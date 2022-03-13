@@ -342,7 +342,7 @@ class Music(commands.Cog):
                 embed=discord.Embed(description="Couldn't download that song!")
             )
         else:
-            ctx.command = None  # Propagate error to Errors.on_command_error
+            ctx.skip = True # Propogate error to Errors.on_command_error
 
     @commands.command(description="Plays a song from youtube.")
     @validate_voice()

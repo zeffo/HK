@@ -14,7 +14,7 @@ class Errors(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        if ctx.command:
+        if ctx.command and not getattr(ctx, 'skip'):    
             if ctx.command.has_error_handler() or ctx.command.cog.has_error_handler():
                 return
         if isinstance(error, commands.NotOwner):
@@ -24,13 +24,16 @@ class Errors(commands.Cog):
 
         elif isinstance(error, commands.BadArgument):
             await ctx.send(
-                f"I wasn't able to parse the command! Please make sure all the arguments are correct."
+                embed=f"I wasn't able to parse the command! Please make sure all the arguments are correct."
             )
 
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(
-                embed=f"You're missing an argument: {error.param}"
-            )
+            hc = ctx.bot.help_command
+            hc.context = ctx
+            embed=hc.get_command_embed(ctx.command)
+            embed.set_author(name=f"You're missing an argument: {error.param}")
+            await ctx.send(embed=embed)
+            
 
         elif not isinstance(error, commands.CommandNotFound):
             buffer = StringIO()
