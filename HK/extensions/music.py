@@ -197,7 +197,7 @@ class Queue(asyncio.Queue):
         if len(self._queue) == len(tracks) and not self.lock.locked():
             await self.play()
 
-class MusicError(Exception):
+class MusicError(commands.CommandError):
     """Base exception for this extension"""
 
 class Playlist:
@@ -307,6 +307,21 @@ class Music(commands.Cog):
     def __getitem__(self, g):
         return self.queues.setdefault(g.id, Queue(g, loop=self.bot.loop))
 
+    def validate_voice():
+        async def inner(ctx):
+            c = getattr(ctx.author.voice, 'channel', None)
+            vc = getattr(ctx.guild.voice_client, 'channel', None)
+            if not c:
+                raise MusicError('You must be in a voice channel!')
+            elif vc is not None and c != vc:
+                if len(vc.members) == 1:
+                    return await ctx.guild.voice_client.move_to(c)
+                else:
+                    raise MusicError('You must be in the same voice channel as the bot!')
+            else:
+                return True
+        return commands.check(inner)
+ 
     async def prepare(self, ctx):
         queue = self[ctx.guild]
         vc = await ctx.connect()
@@ -330,6 +345,7 @@ class Music(commands.Cog):
             ctx.command = None  # Propagate error to Errors.on_command_error
 
     @commands.command(description="Plays a song from youtube.")
+    @validate_voice()
     async def play(self, ctx, *, query):
         queue, vc = await self.prepare(ctx)
         tracks = await YTDL.get(query, self.bot._session)
@@ -338,11 +354,13 @@ class Music(commands.Cog):
         await queue.add(tracks)
 
     @commands.command(description="Skips the current song.")
+    @validate_voice()
     async def skip(self, ctx):
         queue, vc = await self.prepare(ctx)
         vc.stop()
 
     @commands.command(description="Displays the enqueued songs.")
+    @validate_voice()
     async def queue(self, ctx):
         queue = self[ctx.guild]
         items = list(queue._queue)
@@ -374,6 +392,7 @@ class Music(commands.Cog):
     @commands.command(
         description="Disconnects the bot from the VC and resets the queue."
     )
+    @validate_voice()
     async def dc(self, ctx):
         if vc := ctx.voice_client:
             vc.stop()
@@ -382,6 +401,7 @@ class Music(commands.Cog):
             del self.queues[ctx.guild.id]
 
     @commands.command(description="Sets to the volume (1-100)")
+    @validate_voice()
     async def volume(self, ctx, volume: float):
         queue = self[ctx.guild]
         queue.set_volume(volume / 100)
@@ -405,11 +425,13 @@ class Music(commands.Cog):
         await ctx.send(file=discord.File(buffer, "data.json"))
 
     @commands.command(description="Pauses the current song.")
+    @validate_voice()
     async def pause(self, ctx):
         if ctx.voice_client:
             ctx.voice_client.pause()
 
     @commands.command(description="Resumes the current song if paused.")
+    @validate_voice()
     async def resume(self, ctx):
         if ctx.voice_client:
             ctx.voice_client.resume()
@@ -417,6 +439,7 @@ class Music(commands.Cog):
     @commands.command(
         description="Removes the song at the given position from the queue."
     )
+    @validate_voice()
     async def dequeue(self, ctx, index: int):
         queue = self[ctx.guild]._queue
         if index >= len(queue):
@@ -428,6 +451,7 @@ class Music(commands.Cog):
             del queue[index]
 
     @commands.command(description="Toggles looping for the queue.")
+    @validate_voice()
     async def loop(self, ctx):
         queue = self[ctx.guild]
         queue.repeat = not queue.repeat
@@ -478,6 +502,7 @@ class Music(commands.Cog):
         await ctx.send(embed=embed, view=Paginator(ctx, units=units))
 
     @playlist.command(description="Plays a playlist.", name="play")
+    @validate_voice()
     async def _play(self, ctx, author: Optional[discord.Member], *, name):
         await ctx.trigger_typing()
         author = author or ctx.author

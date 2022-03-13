@@ -27,6 +27,11 @@ class Errors(commands.Cog):
                 f"I wasn't able to parse the command! Please make sure all the arguments are correct."
             )
 
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(
+                embed=f"You're missing an argument: {error.param}"
+            )
+
         elif not isinstance(error, commands.CommandNotFound):
             buffer = StringIO()
             traceback.print_exception(

@@ -88,6 +88,8 @@ class Bot(commands.Bot):
             )
 
     async def on_message(self, message):
+        if message.author.bot:
+            return
         ctx = await self.get_context(message, cls=Context)
         await self.invoke(ctx)
 
