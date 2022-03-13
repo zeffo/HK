@@ -454,7 +454,7 @@ class Music(commands.Cog):
             for i in range(0, len(playlists), 10):
                 e = discord.Embed()
                 chunk = playlists[i : i + 10]
-                desc = "\n".join(f"{x+i}. {p['name']} | Played {p['uses']} times." for x, p in enumerate(chunk))
+                desc = "\n".join(f"{x+i}. {p['name']} | played {p['uses']} times." for x, p in enumerate(chunk))
                 e.description = f"```md\n{desc}\n```"
                 units.append(Unit(embed=e))
             await ctx.send(embed=embed, view=Paginator(ctx, units=units))
@@ -467,7 +467,7 @@ class Music(commands.Cog):
         playlist, tracks = await Playlist(self.bot.pool).find(name, author.id)
         embed = discord.Embed(title=playlist.name)
         embed.set_author(name=f"Playlist by {author.name}")
-        embed.description = f"Tracks: {len(tracks)} | Played {playlist.uses} times."
+        embed.description = f"Tracks: {len(tracks)} | played {playlist.uses} times."
         units = [Unit(embed=embed)]
         for i in range(0, len(tracks), 10):
             chunk = tracks[i : i + 10]
@@ -522,7 +522,20 @@ class Music(commands.Cog):
     async def delete(self, ctx, *, name):
         await Playlist(self.bot.pool).delete(name, ctx.author.id)
         await ctx.send(embed=f"Deleted playlist {name}.")
-
+    
+    @playlist.command(description="Displays the most played playlists.")
+    async def top(self, ctx):
+        async with self.bot.pool.acquire() as con:
+            data = await con.fetch('SELECT * FROM Playlists ORDER BY uses DESC LIMIT 10;')
+        
+        embed = discord.Embed(title="Top 10 Playlists")
+        formatted = []
+        for i, playlist in enumerate(data):
+            author = getattr(self.bot.get_user(playlist['owner']), 'name', 'Unknown Author')
+            formatted.append(f"{i}. {playlist['name']} by {author} | played {playlist['uses']} times.")
+        desc = "\n".join(formatted)
+        embed.description = f"```md\n{desc}\n```"
+        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(Music(bot))
