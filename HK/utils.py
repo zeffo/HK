@@ -2,6 +2,8 @@ import sys, psutil, discord
 from jishaku.modules import package_version
 from jishaku.features.root_command import natural_size
 from typing import Generator
+from asyncio import get_running_loop
+from re import match
 
 
 def chunks(it: list, size: int) -> Generator:
@@ -9,6 +11,9 @@ def chunks(it: list, size: int) -> Generator:
         it[size * i : size * (i + 1)]
         for i, _ in enumerate(range(0, len(it) * size, size))
     )
+
+def tmatch(regex, string):
+    return get_running_loop().run_in_executor(None, match, regex, string)
 
 
 def sysinfo(bot):

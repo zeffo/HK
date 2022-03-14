@@ -4,6 +4,7 @@ import asyncio
 from discord.ext import commands
 import yt_dlp
 from ..paginator import Paginator, Unit
+from ..utils import tmatch
 from os import getenv
 import re
 from io import StringIO
@@ -103,10 +104,10 @@ class YTDL(yt_dlp.YoutubeDL):
 
     @classmethod
     async def get(cls, query, session):
-        if match := re.match(cls.VIDEO, query):
+        if match := await tmatch(cls.VIDEO, query):
             data = await cls()._get(match.groups()[0])
             return [Track(data["id"], data)]
-        elif re.match(cls.PLAYLIST, query):
+        elif await tmatch(cls.PLAYLIST, query):
             data = await cls()._get(query)
             return [Track(d["id"], d) for d in data["entries"] if d]
         else:
@@ -521,7 +522,6 @@ class Music(commands.Cog):
     @playlist.command(description="Creates a playlist.")
     async def create(self, ctx, name, *tracks):
         m = await ctx.send(embed="Parsing tracks, please wait...")
-        await ctx.trigger_typing()
         if not tracks and not (queue := self[ctx.guild]).empty():
             parsed, err = [Playlist.track(t.id, t.title, t.stream) for t in queue._queue], ()
             if np := queue.lock.track:
