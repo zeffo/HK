@@ -522,7 +522,12 @@ class Music(commands.Cog):
     async def create(self, ctx, name, *tracks):
         m = await ctx.send(embed="Parsing tracks, please wait...")
         await ctx.trigger_typing()
-        parsed, err = await Playlist.parse(tracks)
+        if not tracks and not (queue := self[ctx.guild]).empty():
+            parsed, err = [Playlist.track(t.id, t.title, t.stream) for t in queue._queue], ()
+            if np := queue.lock.track:
+                parsed.append(Playlist.track(np.id, np.title, np.stream))
+        else:
+            parsed, err = await Playlist.parse(tracks)
         await Playlist(self.bot.pool).new(name, ctx.author.id, parsed)
         ret = f"Created Playlist {name} with {len(parsed)}/{len(parsed)+len(err)} tracks. "
         if err:
