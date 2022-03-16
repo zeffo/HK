@@ -567,6 +567,12 @@ class Music(commands.Cog):
         desc = "\n".join(formatted)
         embed.description = f"```md\n{desc}\n```"
         await ctx.send(embed=embed)
+    
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        if member == self.bot.user and before.channel and not after.channel and member.guild.id in self.queues:
+            del self.queues[member.guild.id]
+            
 
 def setup(bot):
     bot.add_cog(Music(bot))

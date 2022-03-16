@@ -26,7 +26,7 @@ with open("config.yaml") as f:
 
 class Context(commands.Context):
     async def connect(self):
-        if self.voice_client:
+        if getattr(self.voice_client, 'channel', None):
             return self.voice_client
         elif vc := self.author.voice.channel:
             return await vc.connect()
