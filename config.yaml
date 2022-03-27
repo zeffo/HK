@@ -3,7 +3,7 @@ extensions:
   - jishaku
   - custom.ponies
   - custom.presence
-  - custom.typeracerold
+  - custom.typeracer
 emojis:
   first: <:first:861982503001653249>
   next: <:right:861982503266943018>, 
