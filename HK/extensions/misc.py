@@ -1,4 +1,5 @@
 from discord.ext import commands
+from discord import File
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -16,6 +17,12 @@ class Miscellaneous(commands.Cog):
                 title="Source", description="https://github.com/zeffo/HK"
             )
         )
+
+    @commands.command()
+    @commands.is_owner()
+    async def log(self, ctx):
+        await ctx.send(file=File('discord.log', filename='log.txt'))
+
 
 
 def setup(bot):
