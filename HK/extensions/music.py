@@ -574,5 +574,5 @@ class Music(commands.Cog):
             del self.queues[member.guild.id]
             
 
-def setup(bot):
-    bot.add_cog(Music(bot))
+async def setup(bot):
+    await bot.add_cog(Music(bot))

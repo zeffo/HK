@@ -101,17 +101,16 @@ class Bot(commands.Bot):
         for file in Path("HK/extensions").glob("**/*.py"):
             *tree, _ = file.parts
             try:
-                self.load_extension(f"{'.'.join(tree)}.{file.stem}")
+                await self.load_extension(f"{'.'.join(tree)}.{file.stem}")
             except Exception as e:
                 traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
         for ex in self.settings.get("extensions", ()):
-            self.load_extension(ex)
-        await super().start(getenv("TOKEN"))  # type: ignore
+            await self.load_extension(ex)
+        await super().start(getenv("TOKEN"), reconnect=True)  # type: ignore
 
     async def stop(self):
         await self._session.close()
         await self.close()
-        await self.loop.shutdown_asyncgens()
 
     async def on_ready(self):
         print(sysinfo(self))
@@ -121,21 +120,11 @@ class Bot(commands.Bot):
             kwargs["color"] = self.color
         return Embed(*args, **kwargs)
 
-
 if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
 
     bot = Bot(
         settings.get("prefix", "hk "),
         allowed_mentions=AllowedMentions(everyone=False),
         intents=Intents._from_value(settings.get("intents", 131071)),
-        loop=loop,
     )
-
-    try:
-        loop.create_task(bot.start())
-        loop.run_forever()
-    except KeyboardInterrupt:
-        loop.run_until_complete(bot.stop())
-        exit(0)
+    bot.run()

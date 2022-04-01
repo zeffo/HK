@@ -23,5 +23,5 @@ class Nitro(commands.Cog):
         await wh.delete()
 
 
-def setup(bot):
-    bot.add_cog(Nitro(bot))
+async def setup(bot):
+    await bot.add_cog(Nitro(bot))

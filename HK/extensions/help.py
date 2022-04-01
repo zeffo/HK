@@ -121,5 +121,5 @@ class FormattedHelp(commands.HelpCommand):
         await self.context.send(embed=start, view=Paginator(self.context, units=units))
 
 
-def setup(b):
-    b.add_cog(Help(b))
+async def setup(b):
+    await b.add_cog(Help(b))

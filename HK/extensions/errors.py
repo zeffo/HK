@@ -14,6 +14,7 @@ class Errors(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
+        print(ctx.command.cog)
         if ctx.command and not getattr(ctx, 'skip', None):    
             if ctx.command.has_error_handler() or ctx.command.cog.has_error_handler():
                 return
@@ -48,5 +49,5 @@ class Errors(commands.Cog):
             logger.error(buffer.getvalue())
 
 
-def setup(bot):
-    bot.add_cog(Errors(bot))
+async def setup(bot):
+   await bot.add_cog(Errors(bot))

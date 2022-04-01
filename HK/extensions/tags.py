@@ -76,6 +76,6 @@ class Tags(commands.Cog):
         await ctx.send(embed=units[0].embed, view=Paginator(ctx, units=units))
 
 
-def setup(bot: Bot):
+async def setup(bot: Bot):
     if bot.pool:
-        bot.add_cog(Tags(bot))
+        await bot.add_cog(Tags(bot))

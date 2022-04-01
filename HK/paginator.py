@@ -43,26 +43,26 @@ class Paginator(View):
         await self.units[idx].edit(interaction.message)
 
     @button()
-    async def first(self, btn, i):
+    async def first(self, i, btn):
         await self.move(0, i)
 
     @button()
-    async def back(self, btn, i):
+    async def back(self, i, btn):
         if (pos := self.cursor - 1) >= 0:
             await self.move(pos, i)
 
     @button()
-    async def stop(self, btn, i):
+    async def stop(self, i, btn):
         super().stop()
         await i.message.delete()
 
     @button()
-    async def next(self, btn, i):
+    async def next(self, i, btn):
         if (pos := self.cursor + 1) < len(self.units):
             await self.move(pos, i)
 
     @button()
-    async def last(self, btn, i):
+    async def last(self, i, btn):
         await self.move(len(self.units) - 1, i)
 
     async def interaction_check(self, interaction):

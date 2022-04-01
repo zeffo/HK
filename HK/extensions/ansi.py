@@ -75,5 +75,5 @@ class ANSIBuilder(commands.Cog):
         await ctx.send(f"```\n{''.join(content)}\n```")
 
 
-def setup(bot):
-    bot.add_cog(ANSIBuilder(bot))
+async def setup(bot):
+    await bot.add_cog(ANSIBuilder(bot))
