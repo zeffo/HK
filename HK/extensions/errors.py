@@ -14,10 +14,12 @@ class Errors(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        print(ctx.command.cog)
         if ctx.command and not getattr(ctx, 'skip', None):    
-            if ctx.command.has_error_handler() or ctx.command.cog.has_error_handler():
+            if ctx.command.has_error_handler():
                 return
+            if cog := ctx.command.cog:
+                if cog.has_error_handler():
+                    return
         if isinstance(error, commands.NotOwner):
             await ctx.send(
                 "Statement: Only the bot owner may use this command!", delete_after=10

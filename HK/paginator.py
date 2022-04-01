@@ -13,8 +13,8 @@ class Unit(dict):
         except AttributeError:
             return self.get(attr)
 
-    async def edit(self, message):
-        await message.edit(content=self.content, embed=self.embed)
+    async def edit(self, ir):
+        await ir.edit_message(content=self.content, embed=self.embed)
 
 
 class Paginator(View):
@@ -35,12 +35,12 @@ class Paginator(View):
                 unit.embed.color = ctx.bot.color
 
         for child in self.children:
-            emoji = ctx.bot.settings["emojis"][child.callback.func.__name__]
+            emoji = ctx.bot.settings["emojis"][child.callback.callback.__name__]
             child.emoji = emoji
 
     async def move(self, idx: int, interaction: Interaction):
         self.cursor = idx
-        await self.units[idx].edit(interaction.message)
+        await self.units[idx].edit(interaction.response)
 
     @button()
     async def first(self, i, btn):
