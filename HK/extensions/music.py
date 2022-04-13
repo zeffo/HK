@@ -31,8 +31,12 @@ class Track:
         self.id = _id
         self.data = data
         self.ctx = None
+        if data:
+            self._update()
+            
+    def _update(self):
         for item in self.__slots__[2:-1]:
-            setattr(self, item, data[item])
+            setattr(self, item, self.data[item])
 
     @property
     def thumbnail(self):
@@ -45,13 +49,14 @@ class Track:
     def __matmul__(self, ytdl):
         async def update():
             self.data = await ytdl._get(self.id)
+            self._update()
 
         return update()
 
     def embed(self):
         e = discord.Embed(
             title=self.title,
-            url=self.data.get("webpage_url", discord.embeds.EmptyEmbed),
+            url=self.data.get("webpage_url"),
         )
         e.set_author(name="Now Playing")
         e.set_thumbnail(url=self.thumbnail)
@@ -62,7 +67,6 @@ class Track:
             )
 
         return e
-
 
 class YTDL(yt_dlp.YoutubeDL):
     SEARCH = f"https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q={{0}}&type=video&key={getenv('YOUTUBE_API_KEY')}"
@@ -511,8 +515,7 @@ class Music(commands.Cog):
         playlist, tracks = await Playlist(self.bot.pool).find(name, author.id)
         queue, _ = await self.prepare(ctx)
         tracks = [
-            Track(d["id"], d)
-            for d in await asyncio.gather(*[YTDL()._get(t.id) for t in tracks])
+            Track(t.id) for t in tracks
         ]
         for track in tracks:
             track.ctx = ctx

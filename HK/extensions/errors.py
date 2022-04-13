@@ -11,6 +11,11 @@ class Errors(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.hidden = True
+        bot.tree.error(self.app_command_error)
+
+    async def app_command_error(self, interaction, command, error):
+        if not isinstance(error, discord.app_commands.errors.CommandNotFound):
+            raise error
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -36,7 +41,6 @@ class Errors(commands.Cog):
             embed=hc.get_command_embed(ctx.command)
             embed.set_author(name=f"You're missing an argument: {error.param}")
             await ctx.send(embed=embed)
-            
 
         elif not isinstance(error, commands.CommandNotFound):
             buffer = StringIO()
