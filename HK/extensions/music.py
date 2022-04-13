@@ -380,6 +380,9 @@ class Music(commands.Cog):
         for i in range(0, len(items), 10):
             embed = discord.Embed(title="Queue")
             chunk = items[i : i + 10]
+            for track in chunk:
+                if not track.data:
+                    await (track @ YTDL(fast=False))
             tracks = "\n".join([f"{x+i}. {t.title}" for x, t in enumerate(chunk)])
             embed.description = f"```md\n{tracks}```"
             units.append(Unit(embed=embed))
