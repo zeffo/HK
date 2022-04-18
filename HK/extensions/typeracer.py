@@ -48,11 +48,11 @@ class Game(View):
                     score += 1
             time = (resp.created_at-started).total_seconds()
             res = round(score - (time/(self.level/2)), 2)
-            cps = round(len(resp.content)/time, 2)
+            wpm = round((len(resp.content)/time)*2, 2)
             acc = round((score/len(self.words))*100, 2)
-            results.append((resp.author, res, cps, acc))
+            results.append((resp.author, res, wpm, acc))
             
-        desc = "\n".join(f"{i+1}. {player.name}: {score} | WPM: {cps*12} | Time: {time}s | Accuracy: {acc}" for i, (player, score, cps, acc) in enumerate(sorted(results, key=lambda t: t[1], reverse=True)))
+        desc = "\n".join(f"{i+1}. {player.name}: {score} | WPM: {wpm} | Time: {time}s | Accuracy: {acc}" for i, (player, score, wpm, acc) in enumerate(sorted(results, key=lambda t: t[1], reverse=True)))
         embed.description = f"```md\n{desc}\n```"
         await interaction.followup.send(embed=embed)
 
@@ -96,8 +96,6 @@ class TypeRacer(commands.Cog):
         embed = Embed(title="TypeRacer", color=ctx.bot.color)
         embed.description = f"```md\n{ctx.author.name}\n```"
         await ctx.send(embed=embed, view=Game(ctx))
-
-
 
         
 async def setup(b):
