@@ -48,11 +48,11 @@ class Game(View):
                     score += 1
             time = (resp.created_at-started).total_seconds()
             res = round(score - (time/(self.level/2)), 2)
-            wpm = round((len(resp.content)/time)*2, 2)
+            wpm = round((len(resp.content)/time)*12, 2)
             acc = round((score/len(self.words))*100, 2)
-            results.append((resp.author, res, wpm, acc))
+            results.append((resp.author, res, wpm, acc, time))
             
-        desc = "\n".join(f"{i+1}. {player.name}: {score} | WPM: {wpm} | Time: {time}s | Accuracy: {acc}" for i, (player, score, wpm, acc) in enumerate(sorted(results, key=lambda t: t[1], reverse=True)))
+        desc = "\n".join(f"{i+1}. {player.name}: {score} | WPM: {wpm} | Time: {time}s | Accuracy: {acc}" for i, (player, score, wpm, acc, time) in enumerate(sorted(results, key=lambda t: t[1], reverse=True)))
         embed.description = f"```md\n{desc}\n```"
         await interaction.followup.send(embed=embed)
 
