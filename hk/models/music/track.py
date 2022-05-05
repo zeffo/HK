@@ -1,10 +1,41 @@
 from __future__ import annotations
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict, Any
 from .constants import VIDEO, PLAYLIST, SEARCH
 from .ytdl import YTDL
 from pydantic import BaseModel
 import aiohttp
 
+class PartialTrack(BaseModel):
+    """Represents a partially fetched YouTube Video"""
+    id: str
+    title: str
+    uploader: str
+    duration: Union[int, float]
+    url: str
+    thumbnails: List[Dict[str, str]]
+
+    @property
+    def thumbnail(self) -> str:
+        return self.thumbnails[-1]['url']
+
+    def __repr__(self):
+        return f"PartialTrack({self.title}, {self.url})"
+
+class APITrack:
+    """Represents a YouTube video from the YouTube Data API"""
+
+    __slots__ = ('id', 'title', 'thumbnail', 'uploader')
+
+    def __init__(self, data: Dict[Any, Any]):
+        self.id: str = data["id"]["videoId"]
+        snip = data["snippet"]
+        self.title: str = snip["title"]
+        self.thumbnail: str = snip["thumbnails"]["high"]["url"]
+        self.uploader: str = snip["channelTitle"]
+
+    def __repr__(self):
+        return f"APITrack({self.title}, https://youtube.com/watch?v={self.id})"
+    
 
 class Track(BaseModel):
     """Represents a YouTube video"""
@@ -12,49 +43,42 @@ class Track(BaseModel):
     title: str
     uploader: str
     duration: Union[int, float]
+    webpage_url: str
+    thumbnail: str
     url: str
 
-    stream: Optional[str] = None
-    thumbnail: Optional[str] = None
-
-    async def update(self) -> None:
-        if not self.stream:
-            data = await YTDL(fast=False).get_data(self.id)
-            super().__init__(**data)
-
-    @classmethod
-    async def from_api(cls, query: str, *, session: Optional[aiohttp.ClientSession]=None, token: str) -> Track:
+    @staticmethod
+    async def from_api(query: str, *, session: Optional[aiohttp.ClientSession]=None, token: str) -> List[APITrack]:
         session = session or aiohttp.ClientSession()
         async with session.get(SEARCH.format(query, token)) as resp:
             json = await resp.json()
-        ytdl = YTDL()
-        data = await ytdl.get_data(json["items"][0]["id"]["videoId"])
-        return cls(**data)
+        return [APITrack(track) for track in json["items"]]
 
-    @classmethod
-    async def from_query(cls, query: str, *, session: Optional[aiohttp.ClientSession]=None, fast: bool=True, token: str) -> List[Track]:
+    @staticmethod
+    async def from_query(query: str, *, session: Optional[aiohttp.ClientSession]=None, fast: bool=True, token: str) -> Union[List[Union[PartialTrack, Track]], List[Track], List[APITrack]]:
         """Parses the given query and returns the associated tracks"""
+        cls = Track
         ytdl = YTDL(fast=fast)
-        tracks: List[Track] = []
         if match := VIDEO.match(query):
             data = await ytdl.get_data(match.groups()[0])
-            tracks.append(cls(**data))
+            tracks = [cls(**data)]
         elif PLAYLIST.match(query):
             data = await ytdl.get_data(query)
             if fast:
-                for track in data['entries']:
-                    track['thumbnail'] = track['thumbnails'][-1]['url']
-                    tracks.append(cls(**track))
-            else:
-                for track in data['entries']:
-                    track['stream'] = track['url']
-                    track['url'] = track['webpage_url']
-                    tracks.append(cls(**track))
+                cls = PartialTrack
+            tracks = [cls(**track) for track in data['entries']]
         else:
-            tracks.append(await cls.from_api(query, session=session, token=token))
+            tracks = await cls.from_api(query, session=session, token=token)
         return tracks
 
+    @classmethod
+    async def from_partial(cls, partial: Union[PartialTrack, APITrack]):
+        data = await YTDL(fast=False).get_data(partial.id)
+        return cls(**data)
+
     def __repr__(self):
-        return f""" {self.title} by {self.uploader} | Duration: {self.duration} | URL: {self.url} """
+        return f"Track({self.title}, {self.webpage_url})"
+
+
 
     

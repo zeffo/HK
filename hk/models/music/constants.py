@@ -1,7 +1,7 @@
 from re import compile 
 from typing import Dict, Any
 
-SEARCH = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q={0}&type=video&key={1}"
+SEARCH = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&q={0}&type=video&key={1}"
 VIDEO = compile(r"^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$")
 PLAYLIST = compile(r"^.*(youtu.be\/|list=)([^#\&\?]*).*")
 
