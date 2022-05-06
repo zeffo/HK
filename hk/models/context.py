@@ -1,10 +1,11 @@
 from discord import VoiceChannel
-from discord.ext.commands import Context, Bot  # type: ignore
+from discord.ext import commands
+from .bot import Bot
 from discord import VoiceProtocol, VoiceChannel, StageChannel, Member
 from typing import Optional, Union
 
 
-class Context(Context[Bot]):
+class Context(commands.Context[Bot]):
     async def connect(
         self,
     ) -> Optional[Union[VoiceProtocol, VoiceChannel, StageChannel]]:
