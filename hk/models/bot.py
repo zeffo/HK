@@ -1,3 +1,4 @@
+from __future__ import annotations
 from discord.ext import commands
 from discord import Intents, AllowedMentions, Message
 from typing import Any

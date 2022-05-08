@@ -1,11 +1,26 @@
 from __future__ import annotations
 from typing import Optional, List, Union, Dict, Any
+from discord import Embed
 from .constants import VIDEO, PLAYLIST, SEARCH
 from .ytdl import YTDL
+from html import unescape
 from pydantic import BaseModel
 import aiohttp
 
-class PartialTrack(BaseModel):
+class BaseTrack:
+    def __init__(self, id: str, title: str, uploader: str, thumbnail: str):
+        self.id = id
+        self.title = title
+        self.uploader = uploader
+        self.thumbnail = thumbnail
+
+    def embed(self):
+        e = Embed(title=self.title, description=f"Uploaded by **{self.uploader}**")
+        e.set_image(url=self.thumbnail)
+        return e
+
+
+class PartialTrack(BaseModel, BaseTrack):
     """Represents a partially fetched YouTube Video"""
     id: str
     title: str
@@ -21,7 +36,7 @@ class PartialTrack(BaseModel):
     def __repr__(self):
         return f"PartialTrack({self.title}, {self.url})"
 
-class APITrack:
+class APITrack(BaseTrack):
     """Represents a YouTube video from the YouTube Data API"""
 
     __slots__ = ('id', 'title', 'thumbnail', 'uploader')
@@ -33,11 +48,14 @@ class APITrack:
         self.thumbnail: str = snip["thumbnails"]["high"]["url"]
         self.uploader: str = snip["channelTitle"]
 
+        for attr in self.__slots__:
+            setattr(self, attr, unescape(getattr(self, attr)))
+
     def __repr__(self):
         return f"APITrack({self.title}, https://youtube.com/watch?v={self.id})"
     
 
-class Track(BaseModel):
+class Track(BaseModel, BaseTrack):
     """Represents a YouTube video"""
     id: str
     title: str
@@ -61,18 +79,19 @@ class Track(BaseModel):
         ytdl = YTDL(fast=fast)
         if match := VIDEO.match(query):
             data = await ytdl.get_data(match.groups()[0])
-            tracks = [cls(**data)]
+            return [cls(**data)]
         elif PLAYLIST.match(query):
             data = await ytdl.get_data(query)
             if fast:
                 cls = PartialTrack
-            tracks = [cls(**track) for track in data['entries']]
+            return [cls(**track) for track in data['entries']]
         else:
-            tracks = await cls.from_api(query, session=session, token=token)
-        return tracks
+            return await cls.from_api(query, session=session, token=token)
 
     @classmethod
-    async def from_partial(cls, partial: Union[PartialTrack, APITrack]):
+    async def from_partial(cls, partial: Union[Track, PartialTrack, APITrack]):
+        if isinstance(partial, Track):
+            return partial
         data = await YTDL(fast=False).get_data(partial.id)
         return cls(**data)
 
@@ -81,4 +100,5 @@ class Track(BaseModel):
 
 
 
-    
+ResultsType = Union[List[Union[PartialTrack, Track]], List[Track], List[APITrack]]
+TrackType = Union[PartialTrack, APITrack, Track]

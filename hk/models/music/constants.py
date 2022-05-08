@@ -4,6 +4,7 @@ from typing import Dict, Any
 SEARCH = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&q={0}&type=video&key={1}"
 VIDEO = compile(r"^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$")
 PLAYLIST = compile(r"^.*(youtu.be\/|list=)([^#\&\?]*).*")
+FFMPEG_OPTS = {"before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5","options": "-vn"}
 
 class YTDLParams:
     params: Dict[str, Any] = {
