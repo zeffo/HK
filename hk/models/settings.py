@@ -15,11 +15,12 @@ class Settings(BaseModel):
     prefix: str = "hk "
     intents: int = 131071
     extensions: List[str] = ["jishaku"]
+    debug_guild: Optional[int]
 
     youtube_api_token: str
     discord_api_token: str
     postgres_uri: str
-
+    application_id: int
 
     def __init__(self, fp: Optional[str]):
         fp = fp or "./settings.yaml"

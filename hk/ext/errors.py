@@ -1,10 +1,8 @@
 from discord import Interaction, File
 from discord.app_commands.errors import CommandNotFound, AppCommandError
-from discord.app_commands import ContextMenu, Command
 import logging
 import traceback
 from discord.ext import commands
-from typing import Any, Optional, Union
 from io import StringIO, BytesIO
 
 from ..models.bot import Bot
@@ -19,7 +17,7 @@ class Errors(commands.Cog):
         self.hidden = True
         bot.tree.error(self.app_command_error)
 
-    async def app_command_error(self, interaction: Interaction, command: Optional[Union[ContextMenu, Command[Any, Any, Any]]], error: AppCommandError):
+    async def app_command_error(self, interaction: Interaction, error: AppCommandError):
         if not isinstance(error, CommandNotFound):
             raise error
 

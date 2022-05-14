@@ -1,6 +1,6 @@
 from __future__ import annotations
 from discord.ext import commands
-from discord import Intents, AllowedMentions, Message
+from discord import Intents, AllowedMentions, Message, Object
 from typing import Any
 import asyncio
 import traceback
@@ -20,12 +20,14 @@ class Bot(commands.Bot):
         self.conf = Settings(settings)
         self.session = aiohttp.ClientSession()
         self.db = Client(self.conf.postgres_uri, loop=asyncio.get_running_loop())
-        _intents = Intents._from_value(self.conf.intents)  # type: ignore
 
+        self.debug_guild = Object(self.conf.debug_guild) if self.conf.debug_guild else None
+        _intents = Intents._from_value(self.conf.intents)  # type: ignore
         super().__init__(
             command_prefix=self.conf.prefix,
             intents=_intents,
             allowed_mentions=AllowedMentions(everyone=False),
+            application_id=self.conf.application_id,
             *args,
             **kwargs
         )
@@ -49,7 +51,7 @@ class Bot(commands.Bot):
                 traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
         for ex in self.conf.extensions:
             await self.load_extension(ex)
-
+        
     async def start(self):
         await self.db.prepare()
         await self.load_extensions()
@@ -57,4 +59,9 @@ class Bot(commands.Bot):
 
     async def on_ready(self):
         print(sysinfo(self))
+
+
+    async def setup_hook(self) -> None:
+        synced = await self.tree.sync(guild=self.debug_guild)
+        print(f"Synced {len(synced)} commands: {', '.join(c.name for c in synced)}")
 

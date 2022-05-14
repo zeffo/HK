@@ -9,3 +9,4 @@ __pycache__/
 custom/
 *.yaml
 test.py
+tests/*

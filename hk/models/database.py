@@ -1,5 +1,5 @@
 from __future__ import annotations
-from asyncpg import Connection  # type: ignore
+from asyncpg import Connection, Record  # type: ignore
 from asyncpg.pool import Pool  # type: ignore
 import asyncio
 from typing import Optional
@@ -17,6 +17,7 @@ class Client(Pool):
             setup=None,
             init=None,
             loop=loop,
+            record_class=Record # type: ignore
         )
 
     async def prepare(self) -> None:

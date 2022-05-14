@@ -6,7 +6,7 @@ from .track import TrackType, Track
 from .audio import Audio
 from ..bot import Bot
 from typing import Any, Optional
-from asyncio import get_running_loop
+from asyncio import AbstractEventLoop
 
 class Lock(asyncio.Lock):
     track: Optional[TrackType] = None
@@ -22,23 +22,26 @@ class Lock(asyncio.Lock):
 class Queue(asyncio.Queue):  # type: ignore
     """Represents the track queue for a Guild"""
 
-    def __init__(self, guild: Guild, bot: Bot, *args: Any, broadcast: Optional[Messageable]=None, **kwargs: Any):
+    def __init__(self, guild: Guild, bot: Bot, *args: Any, loop: AbstractEventLoop, broadcast: Optional[Messageable]=None, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
         self.guild = guild
         self.bot = bot
+        self.loop = loop
         self.lock = Lock()
         self.volume: float = 0.5
         self.repeat: bool = False
         self.broadcast_channel: Optional[Messageable] = broadcast
 
     async def get(self) -> TrackType:
+        """Returns the next track in the queue"""
         item: TrackType = await super().get()
         if self.repeat:
             await self.put(item)
         return item
 
     async def add(self, *tracks: TrackType):
+        """Adds tracks to the queue"""
         for track in tracks:
             await self.put(track)
         
@@ -56,7 +59,9 @@ class Queue(asyncio.Queue):  # type: ignore
             await self.play()
 
     async def play(self):
+        """Plays the next track in the queue or waits for a track to be added"""
         if vc := self.guild.voice_client:
+            print(1)
             partial = await self.get()
             track = await Track.from_partial(partial)
             await self.lock.acquire(track)
@@ -64,14 +69,16 @@ class Queue(asyncio.Queue):  # type: ignore
                 vc.play(Audio(track.url, volume=self.volume), after=self._handle_next)
 
     def _handle_next(self, e: Optional[Exception]):
-        loop = get_running_loop()
-        loop.create_task(self.next())
+        """Handles any exceptions raised while playing audio and enqueues the next track"""
+        self.loop.create_task(self.next())
 
     async def next(self):
+        """Plays the next track in the queue"""
         self.lock.release()
         await self.play()
 
     async def broadcast(self, embed: Optional[Embed]):
+        """Sends an embed to the queue's channel"""
         if embed and self.broadcast_channel:
             embed.color = self.bot.conf.color
             await self.broadcast_channel.send(embed=embed)
