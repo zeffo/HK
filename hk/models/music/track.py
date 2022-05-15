@@ -77,7 +77,7 @@ class Track(BaseModel, BaseTrack):
         return [APITrack(track) for track in json["items"]]
 
     @staticmethod
-    async def from_query(query: str, *, session: Optional[aiohttp.ClientSession]=None, fast: bool=True, token: str) -> Union[List[Union[PartialTrack, Track]], List[Track], List[APITrack]]:
+    async def from_query(query: str, *, session: Optional[aiohttp.ClientSession] = None, fast: bool = True, token: str) -> Union[List[Union[PartialTrack, Track]], List[Track], List[APITrack]]:
         """Parses the given query and returns the associated tracks"""
         cls = Track
         ytdl = YTDL(fast=fast)
