@@ -26,6 +26,9 @@ Making migrations
 In case you need to change the structure of the database, modify the ``schema.prisma`` file accordingly, then make a
 new migration with the command
 ::
-  prisma migrate dev 
+  prisma migrate dev
 
 When prompted, enter a name for the migration, and commit the generated migration files to source control.
+Then, regenerate the Prisma client
+::
+  prisma generate 
