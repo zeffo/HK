@@ -1,18 +1,19 @@
 from __future__ import annotations
-from discord.ext import commands
-from discord import Intents, AllowedMentions, Message, Object
-from typing import Any
-import asyncio
-import traceback
-import sys
-from pathlib import Path
-import aiohttp
 
-from .settings import Settings
-from .context import Context
-from .database import Client
+import asyncio
+import sys
+import traceback
+from pathlib import Path
+from typing import Any
+
+import aiohttp
+from discord import AllowedMentions, Intents, Message, Object
+from discord.ext import commands
 
 from ..utils.sysinfo import sysinfo
+from .context import Context
+from .database import Client
+from .settings import Settings
 
 
 class Bot(commands.Bot):

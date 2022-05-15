@@ -1,8 +1,10 @@
 from __future__ import annotations
-from asyncpg import Connection, Record  # type: ignore
-from asyncpg.pool import Pool  # type: ignore
+
 import asyncio
 from typing import Optional
+
+from asyncpg import Connection, Record  # type: ignore
+from asyncpg.pool import Pool  # type: ignore
 
 
 class Client(Pool):

@@ -1,9 +1,10 @@
-from discord import Interaction, File
-from discord.app_commands.errors import CommandNotFound, AppCommandError
 import logging
 import traceback
+from io import BytesIO, StringIO
+
+from discord import File, Interaction
+from discord.app_commands.errors import AppCommandError, CommandNotFound
 from discord.ext import commands
-from io import StringIO, BytesIO
 
 from ..models.bot import Bot
 from ..models.context import Context

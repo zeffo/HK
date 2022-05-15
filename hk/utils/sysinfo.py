@@ -1,7 +1,11 @@
+import sys
+
+import discord
+import psutil
 from discord.ext import commands
-import sys, psutil, discord
-from jishaku.modules import package_version # type: ignore
 from jishaku.features.root_command import natural_size  # type: ignore
+from jishaku.modules import package_version  # type: ignore
+
 
 def sysinfo(bot: commands.Bot) -> str:
     """Taken and modified from jishaku.features.root_command"""

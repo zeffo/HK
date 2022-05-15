@@ -1,6 +1,8 @@
-from discord import PCMVolumeTransformer, AudioSource, FFmpegPCMAudio
-from typing import Union, Dict
 from io import BufferedIOBase
+from typing import Dict, Union
+
+from discord import AudioSource, FFmpegPCMAudio, PCMVolumeTransformer
+
 from .constants import FFMPEG_OPTS
 
 

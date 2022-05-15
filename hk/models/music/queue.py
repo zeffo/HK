@@ -1,12 +1,16 @@
 from __future__ import annotations
+
 import asyncio
-from discord import Guild, VoiceClient, Embed
-from discord.abc import Messageable
-from .track import TrackType, Track
-from .audio import Audio
-from ..bot import Bot
-from typing import Any, Optional
 from asyncio import AbstractEventLoop
+from typing import Any, Optional
+
+from discord import Embed, Guild, VoiceClient
+from discord.abc import Messageable
+
+from ..bot import Bot
+from .audio import Audio
+from .track import Track, TrackType
+
 
 class Lock(asyncio.Lock):
     track: Optional[TrackType] = None

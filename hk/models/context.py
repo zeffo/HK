@@ -1,7 +1,9 @@
 from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Optional
+
+from discord import Member, VoiceProtocol
 from discord.ext import commands
-from discord import VoiceProtocol, Member
-from typing import Optional, TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .bot import Bot

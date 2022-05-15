@@ -1,12 +1,13 @@
 from asyncio import get_running_loop
-from discord import TextChannel, app_commands
-from discord.ext import commands
-from discord import Embed, Guild, Interaction, Member, VoiceClient
-from typing import Dict, Tuple, Optional
+from typing import Dict, Optional, Tuple
 
-from ..models.music import Track, MusicError, DownloadError, Queue
+from discord import (Embed, Guild, Interaction, Member, TextChannel,
+                     VoiceClient, app_commands)
+from discord.ext import commands
+
 from ..models.bot import Bot
 from ..models.context import Context
+from ..models.music import DownloadError, MusicError, Queue, Track
 
 
 def validate_voice():

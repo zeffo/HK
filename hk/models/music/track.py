@@ -1,11 +1,15 @@
 from __future__ import annotations
-from typing import Optional, List, Union, Dict, Any
-from discord import Embed
-from .constants import VIDEO, PLAYLIST, SEARCH
-from .ytdl import YTDL
+
 from html import unescape
-from pydantic import BaseModel
+from typing import Any, Dict, List, Optional, Union
+
 import aiohttp
+from discord import Embed
+from pydantic import BaseModel
+
+from .constants import PLAYLIST, SEARCH, VIDEO
+from .ytdl import YTDL
+
 
 class BaseTrack:
     def __init__(self, id: str, title: str, uploader: str, thumbnail: str):
