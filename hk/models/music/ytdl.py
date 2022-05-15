@@ -1,7 +1,9 @@
 from asyncio import get_running_loop
-from yt_dlp import YoutubeDL   # type: ignore
+from typing import Any, Dict
+
+from yt_dlp import YoutubeDL  # type: ignore
+
 from .constants import YTDLParams
-from typing import Dict, Any
 
 
 class YTDL(YoutubeDL):

@@ -1,11 +1,15 @@
 from __future__ import annotations
-from typing import Optional, List, Union, Dict, Any
-from discord import Embed
-from .constants import VIDEO, PLAYLIST, SEARCH
-from .ytdl import YTDL
+
 from html import unescape
-from pydantic import BaseModel
+from typing import Any, Dict, List, Optional, Union
+
 import aiohttp
+from discord import Embed
+from pydantic import BaseModel
+
+from .constants import PLAYLIST, SEARCH, VIDEO
+from .ytdl import YTDL
+
 
 class BaseTrack:
     def __init__(self, id: str, title: str, uploader: str, thumbnail: str):
@@ -73,7 +77,7 @@ class Track(BaseModel, BaseTrack):
         return [APITrack(track) for track in json["items"]]
 
     @staticmethod
-    async def from_query(query: str, *, session: Optional[aiohttp.ClientSession]=None, fast: bool=True, token: str) -> Union[List[Union[PartialTrack, Track]], List[Track], List[APITrack]]:
+    async def from_query(query: str, *, session: Optional[aiohttp.ClientSession] = None, fast: bool = True, token: str) -> Union[List[Union[PartialTrack, Track]], List[Track], List[APITrack]]:
         """Parses the given query and returns the associated tracks"""
         cls = Track
         ytdl = YTDL(fast=fast)

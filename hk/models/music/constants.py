@@ -1,5 +1,5 @@
-from re import compile 
-from typing import Dict, Any
+from re import compile
+from typing import Any, Dict
 
 SEARCH = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&q={0}&type=video&key={1}"
 VIDEO = compile(r"^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$")

@@ -1,25 +1,25 @@
 from __future__ import annotations
-from discord.ext import commands
-from discord import Intents, AllowedMentions, Message, Object
-from typing import Any
-import asyncio
-import traceback
-import sys
-from pathlib import Path
-import aiohttp
 
-from .settings import Settings
-from .context import Context
-from .database import Client
+import sys
+import traceback
+from pathlib import Path
+from typing import Any
+
+import aiohttp
+import prisma
+from discord import AllowedMentions, Intents, Message, Object
+from discord.ext import commands
 
 from ..utils.sysinfo import sysinfo
+from .context import Context
+from .settings import Settings
 
 
 class Bot(commands.Bot):
     def __init__(self, *args: Any, settings: str, **kwargs: Any):
         self.conf = Settings(settings)
         self.session = aiohttp.ClientSession()
-        self.db = Client(self.conf.postgres_uri, loop=asyncio.get_running_loop())
+        self.db = prisma.Prisma()
 
         self.debug_guild = Object(self.conf.debug_guild) if self.conf.debug_guild else None
         _intents = Intents._from_value(self.conf.intents)  # type: ignore
@@ -53,13 +53,12 @@ class Bot(commands.Bot):
             await self.load_extension(ex)
         
     async def start(self):
-        await self.db.prepare()
+        prisma.register(self.db)
         await self.load_extensions()
         await super().start(token=self.conf.discord_api_token)
 
     async def on_ready(self):
         print(sysinfo(self))
-
 
     async def setup_hook(self) -> None:
         synced = await self.tree.sync(guild=self.debug_guild)

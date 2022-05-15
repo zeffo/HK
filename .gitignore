@@ -10,3 +10,4 @@ custom/
 *.yaml
 test.py
 tests/*
+pgvolume/

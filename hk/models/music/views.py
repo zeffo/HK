@@ -1,6 +1,8 @@
 from __future__ import annotations
-from discord.ui import View, Select, Button
-from discord import SelectOption, Interaction
+
+from discord import Interaction, SelectOption
+from discord.ui import Button, Select, View
+
 from ..context import Context
 from .track import ResultsType
 

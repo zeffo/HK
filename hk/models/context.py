@@ -1,7 +1,9 @@
 from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Optional
+
+from discord import Member, Message, VoiceProtocol
 from discord.ext import commands
-from discord import VoiceProtocol, Member
-from typing import Optional, TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .bot import Bot
@@ -22,7 +24,7 @@ class Context(commands.Context['Bot']):
             if vc := self.author.voice.channel:
                 return await vc.connect()
 
-    async def send(self, *args: Any, **kwargs: Any):
+    async def send(self, *args: Any, **kwargs: Any) -> Message:
         if embed := kwargs.get('embed'):
             embed.color = self.bot.conf.color
 
@@ -30,5 +32,5 @@ class Context(commands.Context['Bot']):
             for embed in embeds:
                 embed.color = self.bot.conf.color
 
-        await super().send(*args, **kwargs)
+        return await super().send(*args, **kwargs)
 

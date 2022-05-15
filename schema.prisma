@@ -1,0 +1,42 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator db {
+  provider = "prisma-client-py"
+  interface = "asyncio"
+
+}
+
+model Playlist {
+  id     Int             @id @default(autoincrement())
+  name   String?
+  owner  BigInt?
+  uses   Int?            @default(0)
+  tracks PlaylistTrack[]
+
+  @@unique([name, owner])
+}
+
+model PlaylistTrack {
+  id         Int      @id @default(autoincrement())
+  track      Track    @relation(fields: [trackId], references: [id])
+  trackId    String
+  playlist   Playlist @relation(fields: [playlistId], references: [id])
+  playlistId Int
+
+  @@unique([trackId, playlistId])
+}
+
+model Tag {
+  keyword String  @id
+  meta    String?
+}
+
+model Track {
+  id        String          @id
+  title     String?
+  stream    String?
+  playlists PlaylistTrack[]
+}
