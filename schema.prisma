@@ -23,7 +23,7 @@ model PlaylistTrack {
   id         Int      @id @default(autoincrement())
   track      Track    @relation(fields: [trackId], references: [id])
   trackId    String
-  playlist   Playlist @relation(fields: [playlistId], references: [id])
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
   playlistId Int
 
   @@unique([trackId, playlistId])
