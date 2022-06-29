@@ -6,7 +6,7 @@ from typing import Any, Dict, Union
 from aiohttp import ClientSession
 from yt_dlp import YoutubeDL
 
-from hk.music.track import APIItem, APIResult, BasePlaylist, BaseTrack, Track
+from .track import APIItem, APIResult, BasePlaylist, BaseTrack, Track
 
 __all__ = ("YTDL",)
 

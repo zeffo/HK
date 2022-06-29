@@ -2,15 +2,20 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Dict, Union
 
-from discord import (ButtonStyle, Guild, Interaction, Member, SelectOption,
-                     VoiceClient, app_commands)
+from discord import (
+    ButtonStyle,
+    Guild,
+    Interaction,
+    Member,
+    SelectOption,
+    VoiceClient,
+    app_commands,
+)
 from discord.abc import GuildChannel
 from discord.ext import commands
 from discord.ui import Button, Select, View
 
-from hk.music.track import APIResult
-
-from ..music import YTDL, BasePlaylist, BaseTrack, MusicException, Queue
+from ..music import YTDL, APIResult, BasePlaylist, BaseTrack, MusicException, Queue
 
 if TYPE_CHECKING:
     from ..bot import Bot
@@ -111,7 +116,6 @@ class PlayView(BaseMusicView):
         enqueue.callback = self.enqueue
         self.add_item(self.menu)
         self.add_item(enqueue)
-        # self.add_item(CancelButton())
 
     async def enqueue(self, interaction: Interaction):
         await interaction.response.edit_message(content="Added to queue!", view=None)

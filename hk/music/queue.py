@@ -7,7 +7,11 @@ from discord import Message, VoiceClient
 from discord.abc import GuildChannel, Messageable
 
 from ..bot import Bot
-from . import YTDL, Audio, BasePlaylist, BaseTrack, Track
+from .audio import Audio
+from .track import BasePlaylist, BaseTrack, Track
+from .ytdl import YTDL
+
+__all__ = ("Queue",)
 
 
 class Lock(asyncio.Lock):
@@ -80,7 +84,7 @@ class Queue(asyncio.Queue["BaseTrack"]):
         ):
             vc.play(source, after=self._handle_next)
         if isinstance(self.bound, Messageable):
-            embed, file = await track.thumbnail(self.bot.session)
+            embed, file = await track.create_thumbnail(self.bot.session)
             message = await self.bound.send(
                 embed=embed.set_footer(
                     text=f"Now Playing\n{track.title}\nDuration: {track.runtime}"
