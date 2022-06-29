@@ -52,9 +52,8 @@ class DurationEditTask(asyncio.Task[Any]):
             await self.edit(embed=embed)
 
     async def stop(self):
-        footer = f"{self.embed.footer.text} (100%)"
-        await self.message.edit(embed=self.embed.set_footer(text=footer))
         self.cancel()
+        await self.message.delete()
 
 
 class Queue(asyncio.Queue["BaseTrack"]):
