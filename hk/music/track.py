@@ -1,16 +1,14 @@
 from __future__ import annotations
-
+from pydantic import BaseModel
+from typing import List, Dict, Optional, Union, Tuple, Any
+from io import BytesIO
+from colorthief import ColorThief
+from PIL import Image, ImageDraw, ImageFont
+from textwrap import wrap
+from aiohttp import ClientSession
 import asyncio
 from html import unescape
-from io import BytesIO
-from textwrap import wrap
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-from aiohttp import ClientSession
-from colorthief import ColorThief
-from discord import Color, Embed, File
-from PIL import Image, ImageDraw, ImageFont
-from pydantic import BaseModel
+from discord import Embed, File, Color
 
 __all__ = (
     "BaseTrack",
@@ -65,7 +63,7 @@ class ThumbnailCreator(metaclass=ThumbnailCache):
         pen = ImageDraw.Draw(gradient)
         _normal = ImageFont.truetype(normal, 20)
         _bold = ImageFont.truetype(bold, 40)
-        title = "\n".join(wrap(self.track.title, 20, max_lines=2))
+        title = "\n".join(wrap(self.track.title, 25, max_lines=2))
         uploader = "By " + self.track.uploader
         start = tx + gap
         tbox = pen.multiline_textbbox((start, gap), title, font=_bold, spacing=20)
