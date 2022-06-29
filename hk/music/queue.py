@@ -43,9 +43,8 @@ class DurationEditTask(asyncio.Task[Any]):
             self.cancel()
 
     async def edit_duration(self):
-        chunk = self.track.duration / 10
         while True:
-            await asyncio.sleep(chunk)
+            await asyncio.sleep(5)
             pct = (self.source.seconds() / self.track.duration) * 100
             rendered = f"{self.embed.footer.text} ({pct:.2f}%)"
             embed = self.embed.copy().set_footer(text=rendered)

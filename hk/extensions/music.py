@@ -81,7 +81,7 @@ class TrackSelect(Select["PlayView"]):
         self._selected_values = [str(idx)]
         embed, file = await item.create_thumbnail(self.view.bot.session)
         await interaction.response.edit_message(
-            attachments=[file], view=self.view, embed=embed
+            attachments=[file], view=self.view, embed=embed.set_footer(text=f"{item.title}\nby {item.uploader}")
         )
 
     def selected(self):
@@ -124,9 +124,13 @@ class PlayView(BaseMusicView):
         )
         items = result.partials() if isinstance(result, APIResult) else [result]
         view = cls(bot, queue, *items)
-        embed, file = await items[0].create_thumbnail(bot.session)
+        track = items[0]
+        embed, file = await track.create_thumbnail(bot.session)
+        text = f"{track.title}\nby {track.uploader}"
+        if isinstance(track, BasePlaylist):
+            text += f"\n{len(track.entries)} tracks"
+        embed.set_footer(text=text)
         await iact.followup.send(embed=embed, file=file, view=view, ephemeral=True)
-
 
 class Music(commands.Cog):
     def __init__(self, bot: "Bot"):
