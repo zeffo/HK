@@ -1,8 +1,9 @@
-from .bot import Bot
-from .settings import Config
 import asyncio
 import logging
 import logging.handlers
+
+from .bot import Bot
+from .settings import Config
 
 logger = logging.getLogger("discord")
 logger.setLevel(logging.ERROR)

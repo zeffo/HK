@@ -1,9 +1,9 @@
-from .ytdl import *
-from .track import *
+from discord.app_commands import AppCommandError
+
 from .audio import *
 from .queue import *
-
-from discord.app_commands import AppCommandError
+from .track import *
+from .ytdl import *
 
 
 class MusicException(AppCommandError):

@@ -1,21 +1,16 @@
 from __future__ import annotations
-from discord.ext import commands
+
 from typing import TYPE_CHECKING, Dict, Union
-from discord import (
-    Guild,
-    app_commands,
-    Interaction,
-    Member,
-    VoiceClient,
-    SelectOption,
-    ButtonStyle,
-    File
-)
-from discord.ui import View, Select, Button
+
+from discord import (ButtonStyle, Guild, Interaction, Member, SelectOption,
+                     VoiceClient, app_commands)
 from discord.abc import GuildChannel
+from discord.ext import commands
+from discord.ui import Button, Select, View
 
 from hk.music.track import APIResult
-from ..music import Queue, MusicException, BaseTrack, BasePlaylist, YTDL
+
+from ..music import YTDL, BasePlaylist, BaseTrack, MusicException, Queue
 
 if TYPE_CHECKING:
     from ..bot import Bot
@@ -29,6 +24,11 @@ GuildOnlyException = MusicException("This command can only be used in a server!"
 
 
 async def check(interaction: Interaction):
+    """
+    Checks the following:
+        - Interaction takes place in a Guild
+        - The user is in the same voice channel as the bot
+    """
     if not isinstance(interaction.user, Member) or interaction.guild is None:
         raise GuildOnlyException
     voice = interaction.user.voice
@@ -48,12 +48,15 @@ async def check(interaction: Interaction):
         raise NoVoiceChannelException
     return True
 
+
 class BaseMusicView(View):
     async def interaction_check(self, interaction: Interaction) -> bool:
         return await check(interaction)
 
+
 def requires_voice_channel():
     return app_commands.check(check)
+
 
 class TrackSelect(Select["PlayView"]):
     def __init__(self, *items: Union[BaseTrack, BasePlaylist]):
@@ -77,8 +80,10 @@ class TrackSelect(Select["PlayView"]):
         self.options[self.page].default = False
         self.page = idx
         self._selected_values = [str(idx)]
-        file = File(await item.thumbnail(self.view.bot.session), filename="track.png")
-        await interaction.response.edit_message(attachments=[file], view=self.view)
+        embed, file = await item.create_thumbnail(self.view.bot.session)
+        await interaction.response.edit_message(
+            attachments=[file], view=self.view, embed=embed
+        )
 
     def selected(self):
         return self.items[int(self.values[0])]
@@ -99,7 +104,6 @@ class PlayView(BaseMusicView):
         self.bot = bot
         self.queue = queue
         self.items = items
-        self.page: int = 0
         self.menu = TrackSelect(*items)
         enqueue: Button["PlayView"] = Button(
             style=ButtonStyle.primary, label="Add to Queue"
@@ -107,24 +111,23 @@ class PlayView(BaseMusicView):
         enqueue.callback = self.enqueue
         self.add_item(self.menu)
         self.add_item(enqueue)
-        self.add_item(CancelButton())
+        # self.add_item(CancelButton())
 
     async def enqueue(self, interaction: Interaction):
         await interaction.response.edit_message(content="Added to queue!", view=None)
         track = self.menu.selected()
         await self.queue.put(track)
 
-
     @classmethod
     async def create(cls, bot: Bot, iact: Interaction, queue: Queue, query: str):
-        await iact.response.defer()
+        await iact.response.defer(ephemeral=True)
         result = await YTDL.from_query(
             query, session=bot.session, api_key=bot.conf.env["YOUTUBE"]
         )
         items = result.partials() if isinstance(result, APIResult) else [result]
         view = cls(bot, queue, *items)
-        file = File(await items[0].thumbnail(bot.session), filename="track.png")
-        await iact.followup.send(file=file, view=view, ephemeral=True)
+        embed, file = await items[0].create_thumbnail(bot.session)
+        await iact.followup.send(embed=embed, file=file, view=view, ephemeral=True)
 
 
 class Music(commands.Cog):
@@ -133,7 +136,7 @@ class Music(commands.Cog):
         self.queues: Dict[Guild, Queue] = {}
 
     def get_queue(self, channel: GuildChannel):
-        return self.queues.setdefault(channel.guild, Queue(bound=channel))
+        return self.queues.setdefault(channel.guild, Queue(bound=channel, bot=self.bot))
 
     @app_commands.command()
     @requires_voice_channel()

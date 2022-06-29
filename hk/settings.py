@@ -1,9 +1,10 @@
-from typing import List, Optional
-from typing_extensions import TypedDict
-from dotenv import load_dotenv
 from os import environ
+from typing import List, Optional
+
 import yaml
+from dotenv import load_dotenv
 from pydantic import BaseModel
+from typing_extensions import TypedDict
 
 __all__ = ("Config",)
 

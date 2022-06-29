@@ -1,11 +1,15 @@
 from __future__ import annotations
-from aiohttp import ClientSession
-from . import Config
-from discord.ext import commands
-from discord import Intents, Object
-from typing import Any
+
+import sys
+import traceback
 from pathlib import Path
-import traceback, sys
+from typing import Any
+
+from aiohttp import ClientSession
+from discord import Intents, Object
+from discord.ext import commands
+
+from . import Config
 
 
 class Bot(commands.Bot):

@@ -1,8 +1,10 @@
 import asyncio
+from logging import getLogger
 from re import compile
-from yt_dlp import YoutubeDL
 from typing import Any, Dict, Union
+
 from aiohttp import ClientSession
+from yt_dlp import YoutubeDL
 
 from hk.music.track import APIItem, APIResult, BasePlaylist, BaseTrack, Track
 
@@ -31,6 +33,7 @@ class YTDL(YoutubeDL):
             "source_address": "0.0.0.0",
             "extract_flat": True,
             "skip_download": True,
+            "logger": getLogger("discord"),
         }
         super().__init__(params=params)
 
@@ -43,7 +46,7 @@ class YTDL(YoutubeDL):
                 data: Dict[Any, Any] = yd.extract_info(uri, download=False)
             return data
 
-        return await asyncio.get_running_loop().run_in_executor(None, to_thread)
+        return await asyncio.to_thread(to_thread)
 
     @classmethod
     async def from_api(cls, query: str, *, session: ClientSession, api_key: str):
@@ -55,6 +58,8 @@ class YTDL(YoutubeDL):
     async def to_track(cls, partial: Union[BaseTrack, APIItem]):
         if not isinstance(partial, Track):
             data = await cls.get_data(str(partial.id))
+            if data is None:
+                return
             return Track(**data)
         return partial
 
