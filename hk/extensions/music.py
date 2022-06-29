@@ -2,20 +2,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Dict, Union
 
-from discord import (
-    ButtonStyle,
-    Guild,
-    Interaction,
-    Member,
-    SelectOption,
-    VoiceClient,
-    app_commands,
-)
+from discord import (ButtonStyle, Guild, Interaction, Member, SelectOption,
+                     VoiceClient, app_commands)
 from discord.abc import GuildChannel
 from discord.ext import commands
 from discord.ui import Button, Select, View
 
-from ..music import YTDL, APIResult, BasePlaylist, BaseTrack, MusicException, Queue
+from ..music import (YTDL, APIResult, BasePlaylist, BaseTrack, MusicException,
+                     Queue)
 
 if TYPE_CHECKING:
     from ..bot import Bot

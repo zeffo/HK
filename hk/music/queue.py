@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Optional, Union
 
-from discord import Message, VoiceClient, Embed
+from discord import Embed, Message, VoiceClient
 from discord.abc import GuildChannel, Messageable
 
 from ..bot import Bot
@@ -27,21 +27,24 @@ class Lock(asyncio.Lock):
         self.track = None
         super().release()
 
+
 class Slider:
     cursor = "🔘"
     segment = "➖"
+
     def __init__(self):
         self.position = 0
-        self.slider = list(self.cursor+self.segment*9)
-    
+        self.slider = list(self.cursor + self.segment * 9)
+
     def render(self, complete: float, total: float):
-        pct = round((complete*100)/total)
-        idx = round(pct, -1)//10-1
+        pct = round((complete * 100) / total)
+        idx = round(pct, -1) // 10 - 1
         idx = max(idx, 0)
         self.slider[self.position] = self.segment
         self.slider[idx] = self.cursor
         self.position = idx
         return "".join(self.slider)
+
 
 class DurationEditTask(asyncio.Task[Any]):
     def __init__(self, source: Audio, track: Track, message: Message):
@@ -61,15 +64,14 @@ class DurationEditTask(asyncio.Task[Any]):
             self.cancel()
 
     async def edit_duration(self):
-        chunk = self.track.duration/10
+        chunk = self.track.duration / 10
         while True:
-            await asyncio.sleep(chunk)     
+            await asyncio.sleep(chunk)
             render = self.slider.render(self.source.seconds(), self.track.duration)
             rendered = f"{self.embed.footer.text}\n{render}"
             embed = self.embed.copy().set_footer(text=rendered)
-            await self.edit(embed = embed)
-            
-        
+            await self.edit(embed=embed)
+
     async def stop(self):
         footer = f"{self.embed.footer.text}\n{self.slider.render(10,10)}"
         await self.message.edit(embed=self.embed.set_footer(text=footer))

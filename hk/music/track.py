@@ -1,14 +1,16 @@
 from __future__ import annotations
-from pydantic import BaseModel
-from typing import List, Dict, Optional, Union, Tuple, Any
-from io import BytesIO
-from colorthief import ColorThief
-from PIL import Image, ImageDraw, ImageFont
-from textwrap import wrap
-from aiohttp import ClientSession
+
 import asyncio
 from html import unescape
-from discord import Embed, File, Color
+from io import BytesIO
+from textwrap import wrap
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+from aiohttp import ClientSession
+from colorthief import ColorThief
+from discord import Color, Embed, File
+from PIL import Image, ImageDraw, ImageFont
+from pydantic import BaseModel
 
 __all__ = (
     "BaseTrack",
