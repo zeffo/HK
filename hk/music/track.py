@@ -204,15 +204,21 @@ class APIResult(BaseModel):
 class BasePlaylist(BaseModel):
     id: str
     title: str
-    uploader: str
+    uploader: str = "Unknown Uploader"
     thumbnails: List[Thumbnail]
     entries: List[BaseTrack]
+
+    def __init__(self, **data: Any):
+        data['uploader'] = data['uploader'] or "Unknown Uploader"
+        super().__init__(**data)
 
     async def create_thumbnail(self, session: ClientSession):
         return await ThumbnailCreator(self).create(session=session)
 
     def get_thumbnail(self):
         return self.thumbnails[-1].url
+
+
 
 
 class Playlist(BasePlaylist):
