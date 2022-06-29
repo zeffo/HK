@@ -28,33 +28,12 @@ class Lock(asyncio.Lock):
         super().release()
 
 
-class Slider:
-    cursor = "🔘"
-    segment = "➖"
-
-    def __init__(self):
-        self.position = 0
-        self.slider = list(self.cursor + self.segment * 9)
-
-    def render(self, complete: float, total: float):
-        pct = round((complete * 100) / total)
-        idx = round(pct, -1) // 10 - 1
-        idx = max(idx, 0)
-        self.slider[self.position] = self.segment
-        self.slider[idx] = self.cursor
-        self.position = idx
-        return "".join(self.slider)
-
-
 class DurationEditTask(asyncio.Task[Any]):
     def __init__(self, source: Audio, track: Track, message: Message):
         self.source = source
         self.track = track
         self.message = message
-        self.slider = Slider()
         self.embed = message.embeds[0]
-        parts = (self.embed.footer.text or "").split("\n")
-        self.embed.set_footer(text="\n".join(parts[:-1]))
         super().__init__(self.edit_duration())
 
     async def edit(self, embed: Embed):
@@ -67,13 +46,13 @@ class DurationEditTask(asyncio.Task[Any]):
         chunk = self.track.duration / 10
         while True:
             await asyncio.sleep(chunk)
-            render = self.slider.render(self.source.seconds(), self.track.duration)
-            rendered = f"{self.embed.footer.text}\n{render}"
+            pct = (self.source.seconds() / self.track.duration) * 100
+            rendered = f"{self.embed.footer.text} ({pct:.2f}%)"
             embed = self.embed.copy().set_footer(text=rendered)
             await self.edit(embed=embed)
 
     async def stop(self):
-        footer = f"{self.embed.footer.text}\n{self.slider.render(10,10)}"
+        footer = f"{self.embed.footer.text} (100%)"
         await self.message.edit(embed=self.embed.set_footer(text=footer))
         self.cancel()
 
@@ -111,7 +90,7 @@ class Queue(asyncio.Queue["BaseTrack"]):
             embed, file = await track.create_thumbnail(self.bot.session)
             message = await self.bound.send(
                 embed=embed.set_footer(
-                    text=f"Now Playing\n{track.title}\nDuration: {track.runtime}\n{''.join(Slider().slider)}"
+                    text=f"Now Playing\n{track.title}\nDuration: {track.runtime}"
                 ),
                 file=file,
             )
