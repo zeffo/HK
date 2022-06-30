@@ -2,24 +2,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Dict, Union
 
-from discord import (ButtonStyle, Guild, Interaction, Member, SelectOption,
-                     VoiceClient, app_commands)
+from discord import (ButtonStyle, Embed, Guild, Interaction, Member,
+                     SelectOption, VoiceClient, app_commands)
 from discord.abc import GuildChannel
 from discord.ext import commands
 from discord.ui import Button, Select, View
 
-from ..music import (YTDL, APIResult, BasePlaylist, BaseTrack, MusicException,
-                     Queue)
+from ..music import (YTDL, APIResult, BasePlaylist, BaseTrack,
+                     DifferentVoiceChannelException, GuildOnlyException,
+                     NoVoiceChannelException, Queue)
 
 if TYPE_CHECKING:
     from ..bot import Bot
-
-
-NoVoiceChannelException = MusicException("You must be in a voice channel!")
-DifferentVoiceChannelException = MusicException(
-    "You must be in the same voice channel as the bot!"
-)
-GuildOnlyException = MusicException("This command can only be used in a server!")
 
 
 async def check(interaction: Interaction):
@@ -54,6 +48,7 @@ class BaseMusicView(View):
 
 
 def requires_voice_channel():
+    """Decorator for app commands that uses the base check"""
     return app_commands.check(check)
 
 
@@ -81,7 +76,9 @@ class TrackSelect(Select["PlayView"]):
         self._selected_values = [str(idx)]
         embed, file = await item.create_thumbnail(self.view.bot.session)
         await interaction.response.edit_message(
-            attachments=[file], view=self.view, embed=embed.set_footer(text=f"{item.title}\nby {item.uploader}")
+            attachments=[file],
+            view=self.view,
+            embed=embed.set_footer(text=f"{item.title}\nby {item.uploader}"),
         )
 
     def selected(self):
@@ -132,6 +129,7 @@ class PlayView(BaseMusicView):
         embed.set_footer(text=text)
         await iact.followup.send(embed=embed, file=file, view=view, ephemeral=True)
 
+
 class Music(commands.Cog):
     def __init__(self, bot: "Bot"):
         self.bot = bot
@@ -148,6 +146,28 @@ class Music(commands.Cog):
                 self.bot, interaction, self.get_queue(interaction.channel), query
             )
         raise GuildOnlyException
+
+    @app_commands.command()
+    @requires_voice_channel()
+    async def skip(self, interaction: Interaction):
+        assert (
+            isinstance(interaction.channel, GuildChannel)
+            and interaction.guild is not None
+        )
+        queue = self.get_queue(interaction.channel)
+        track = queue.lock.track
+        if track:
+            embed, _ = await track.create_thumbnail(self.bot.session)
+            embed.set_author(
+                name="Skipping", icon_url=interaction.user.display_avatar.url
+            ).set_footer(
+                text=f"{track.title}\nby {track.uploader}",
+                icon_url=track.get_thumbnail(),
+            )
+        else:
+            embed = Embed(description="Nothing to skip!", color=self.bot.conf.color)
+        await interaction.response.send_message(embed=embed)
+        queue.skip()
 
 
 async def setup(bot: "Bot"):

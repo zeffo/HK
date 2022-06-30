@@ -65,7 +65,7 @@ class ThumbnailCreator(metaclass=ThumbnailCache):
         pen = ImageDraw.Draw(gradient)
         _normal = ImageFont.truetype(normal, 20)
         _bold = ImageFont.truetype(bold, 40)
-        title = "\n".join(wrap(self.track.title, 25, max_lines=2))
+        title = "\n".join(wrap(self.track.title, 24, max_lines=2))
         uploader = "By " + self.track.uploader
         start = tx + gap
         tbox = pen.multiline_textbbox((start, gap), title, font=_bold, spacing=20)
@@ -209,7 +209,7 @@ class BasePlaylist(BaseModel):
     entries: List[BaseTrack]
 
     def __init__(self, **data: Any):
-        data['uploader'] = data['uploader'] or "Unknown Uploader"
+        data["uploader"] = data["uploader"] or "Unknown Uploader"
         super().__init__(**data)
 
     async def create_thumbnail(self, session: ClientSession):
@@ -217,8 +217,6 @@ class BasePlaylist(BaseModel):
 
     def get_thumbnail(self):
         return self.thumbnails[-1].url
-
-
 
 
 class Playlist(BasePlaylist):

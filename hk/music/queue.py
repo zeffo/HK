@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from logging import getLogger
 from typing import Any, Optional, Union
 
 from discord import Embed, Message, VoiceClient
@@ -13,9 +14,11 @@ from .ytdl import YTDL
 
 __all__ = ("Queue",)
 
+logger = getLogger("discord")
+
 
 class Lock(asyncio.Lock):
-    """Lock that"""
+    """Lock that can hold a Track"""
 
     track: Optional[Track] = None
 
@@ -29,6 +32,8 @@ class Lock(asyncio.Lock):
 
 
 class DurationEditTask(asyncio.Task[Any]):
+    """A Task to update the track completion status on a Message every 10 seconds"""
+
     def __init__(self, source: Audio, track: Track, message: Message):
         self.source = source
         self.track = track
@@ -38,7 +43,7 @@ class DurationEditTask(asyncio.Task[Any]):
 
     async def edit(self, embed: Embed):
         try:
-            await self.message.edit(embed=embed, attachments=[])
+            await self.message.edit(embed=embed, attachments=self.message.attachments)
         except Exception:
             self.cancel()
 
@@ -56,6 +61,8 @@ class DurationEditTask(asyncio.Task[Any]):
 
 
 class Queue(asyncio.Queue["BaseTrack"]):
+    """Handles automatic playback, playlist parsing and more"""
+
     def __init__(self, bot: Bot, *, bound: GuildChannel):
         super().__init__(500)
         self.bot = bot
@@ -83,6 +90,8 @@ class Queue(asyncio.Queue["BaseTrack"]):
             and (vc := self.guild.voice_client)
             and isinstance(vc, VoiceClient)
         ):
+            if vc.is_playing():
+                vc.stop()
             vc.play(source, after=self._handle_next)
         if isinstance(self.bound, Messageable):
             embed, file = await track.create_thumbnail(self.bot.session)
@@ -125,3 +134,8 @@ class Queue(asyncio.Queue["BaseTrack"]):
         if self.looping:
             await self.put(item)
         return item
+
+    def skip(self):
+        if vc := self.guild.voice_client:
+            if isinstance(vc, VoiceClient):
+                vc.stop()

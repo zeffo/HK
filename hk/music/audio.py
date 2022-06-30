@@ -10,6 +10,8 @@ FFMPEG_OPTS = {
 
 
 class Audio(PCMVolumeTransformer[AudioSource]):
+    """AudioSource to keep track of amount of data read (in ms)"""
+
     def __init__(
         self,
         stream: Union[str, BufferedIOBase],
