@@ -67,14 +67,14 @@ class YTDL(YoutubeDL):
         return partial
 
     @classmethod
-    async def from_query(
-        cls, query: str, *, session: ClientSession, api_key: str
-    ) -> Union[BaseTrack, APIResult, BasePlaylist]:
+    async def from_query(cls, query: str, *, session: ClientSession, api_key: str):
         if match := VIDEO.match(query):
             data = await cls.get_data(match.group(1))
-            return Track(**data)
+            return (Track(**data),)
         elif PLAYLIST.match(query):
             data = await cls.get_data(query)
-            return BasePlaylist(**data)
+            return (BasePlaylist(**data),)
         else:
-            return await cls.from_api(query, session=session, api_key=api_key)
+            return tuple(
+                (await cls.from_api(query, session=session, api_key=api_key)).partials()
+            )

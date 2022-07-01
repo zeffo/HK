@@ -4,7 +4,7 @@ import asyncio
 from html import unescape
 from io import BytesIO
 from textwrap import wrap
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Protocol, Tuple, Union
 
 from aiohttp import ClientSession
 from colorthief import ColorThief
@@ -23,14 +23,34 @@ __all__ = (
 )
 
 
+class HasThumbnail:
+    id: str
+    title: str
+    uploader: str
+    thumbnails: List[Thumbnail]
+
+    def get_thumbnail(self):
+        return self.thumbnails[-1].url
+
+    async def create_thumbnail(self, session: ClientSession):
+        return await ThumbnailCreator(self).create(session=session)
+
+
 class ThumbnailCache(type):
     cache: Dict[str, Tuple[Embed, Image.Image]] = {}
 
 
 class ThumbnailCreator(metaclass=ThumbnailCache):
-    def __init__(self, track: Union[BaseTrack, BasePlaylist]):
+    def __init__(self, track: HasThumbnail):
         self.track = track
         self.url = track.get_thumbnail()
+
+    def to_cache(self, embed: Embed, image: Image.Image):
+        self.__class__.cache[self.track.id] = embed, image
+
+    @property
+    def cached(self):
+        return self.__class__.cache.get(self.track.id)
 
     def get_palette(
         self, file: BytesIO
@@ -82,7 +102,7 @@ class ThumbnailCreator(metaclass=ThumbnailCache):
         file = self.save(gradient)
         embed = Embed(color=Color.from_rgb(*base))
         embed.set_image(url="attachment://track.png")
-        self.__class__.cache[self.track.id] = embed, gradient
+        self.to_cache(embed, gradient)
         return embed, file
 
     def save(self, image: Image.Image):
@@ -92,9 +112,10 @@ class ThumbnailCreator(metaclass=ThumbnailCache):
         return File(buffer, filename="track.png")
 
     async def create(self, *, session: ClientSession):
-        if cached := self.__class__.cache.get(self.track.id):
+        if cached := self.cached:
             embed, image = cached
             return embed, self.save(image)
+
         async with session.get(self.url) as resp:
             buffer = BytesIO(await resp.content.read())
         embed, file = await asyncio.to_thread(self.generate, buffer)
@@ -104,22 +125,13 @@ class ThumbnailCreator(metaclass=ThumbnailCache):
 class Thumbnail(BaseModel):
     url: str
 
-    def __str__(self):
-        return f"Thumbnail({self.url})"
 
-
-class BaseTrack(BaseModel):
+class BaseTrack(HasThumbnail, BaseModel):
     id: str
     title: str
     description: Optional[str]
     uploader: str
     thumbnails: List[Thumbnail]
-
-    async def create_thumbnail(self, session: ClientSession):
-        return await ThumbnailCreator(self).create(session=session)
-
-    def get_thumbnail(self):
-        return self.thumbnails[-1].url
 
 
 class Track(BaseTrack):
@@ -201,7 +213,7 @@ class APIResult(BaseModel):
         return tracks
 
 
-class BasePlaylist(BaseModel):
+class BasePlaylist(HasThumbnail, BaseModel):
     id: str
     title: str
     uploader: str = "Unknown Uploader"
@@ -212,13 +224,6 @@ class BasePlaylist(BaseModel):
         data["uploader"] = data["uploader"] or "Unknown Uploader"
         super().__init__(**data)
 
-    async def create_thumbnail(self, session: ClientSession):
-        return await ThumbnailCreator(self).create(session=session)
-
-    def get_thumbnail(self):
-        return self.thumbnails[-1].url
-
 
 class Playlist(BasePlaylist):
-    def __str__(self):
-        return f"Playlist(title={self.title}, uploader={self.uploader}, tracks={len(self.entries)})"
+    ...
