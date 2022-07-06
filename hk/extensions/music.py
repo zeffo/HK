@@ -1,14 +1,14 @@
 from __future__ import annotations
-
 from typing import (TYPE_CHECKING, Any, Dict, Union)
 
 from discord import (ButtonStyle, Embed, Guild, Interaction, SelectOption,
                      app_commands)
 from discord.ext import commands
 from discord.ui import Button, Select, View
-
+from discord.utils import MISSING
 from ..music import (YTDL, BasePlaylist, BaseTrack, Payload,
                      Queue)
+from ..views import Paginator, Unit
 
 if TYPE_CHECKING:
     from ..bot import Bot
@@ -25,7 +25,6 @@ class CancelButton(Button[View]):
     async def callback(self, interaction: Interaction) -> Any:
         if message := interaction.message:
             await message.delete()
-
 
 class TrackSelect(Select['PlayView']):
     def __init__(self, *items: Union[BaseTrack, BasePlaylist]):
@@ -48,7 +47,7 @@ class TrackSelect(Select['PlayView']):
             embed = banner.embed()
             await interaction.response.edit_message(embed=embed.set_footer(text=f"{track.title}\nby {track.uploader}"), attachments=[banner.file()], view=self.view)
 
-class PlayView(View):
+class PlayView(BaseMusicView):
     def __init__(
         self,
         payload: Payload,
@@ -90,6 +89,26 @@ class PlayView(View):
                 await interaction.response.edit_message(view=None, embed=embed, attachments=message.attachments)
         track = self.select.items[int(self.select.values[0])]
         await self.queue.put(track)
+
+class QueueView(Paginator):
+
+    @classmethod
+    async def display(cls, payload: Payload, queue: Queue):
+        tracks = list(queue.queue)
+        bot = payload.bot
+        if np := queue.lock.track:
+            banner = await np.create_banner(bot.session)
+            embed = banner.embed().set_footer(text=f"Now Playing\n{np.title}")
+            start = Unit(embed=embed, files=[banner.file()])
+        else:
+            start = Unit(embed=Embed(description="The queue is empty :(", color=bot.conf.color))
+        items = [start]
+        for i in range(0, len(tracks), 5):
+            content = "\n".join(f"{i+x}. {t.title}" for x, t in enumerate(tracks[i:i+5]))
+            embed = Embed(description=f"```md\n{content}\n```", color=bot.conf.color)
+            items.append(Unit(embed=embed))
+        view = cls(payload.bot, *items)
+        await payload.interaction.response.send_message(embed=start.embed or MISSING, files=start.files, view=view, ephemeral=True)
 
 
 class Music(commands.Cog):
@@ -138,6 +157,12 @@ class Music(commands.Cog):
         else:
             embed = Embed(description="Nothing to skip!", color=self.bot.conf.color)
         await iact.response.send_message(embed=embed)
+
+    @app_commands.command()
+    async def queue(self, iact: Interaction):
+        """See the current and upcoming tracks"""
+        payload = await Payload.from_interaction(self.bot, iact)
+        await QueueView.display(payload, self.get_queue(payload))
 
 async def setup(bot: Bot):
     await bot.add_cog(Music(bot))

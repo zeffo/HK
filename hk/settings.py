@@ -10,7 +10,7 @@ __all__ = ("Config",)
 
 
 class Emojis(TypedDict):
-    forward: str
+    first: str
     stop: str
     skip: str
     next: str
@@ -30,7 +30,7 @@ class Config(BaseModel):
 
     color: int = 0xA80000
     emojis = Emojis(
-        forward="⏮️", stop="⏹️", skip="⏭️", next="➡️", back="⬅️", playpause="⏯️", x="❌"
+        first="⏮️", stop="⏹️", skip="⏭️", next="➡️", back="⬅️", playpause="⏯️", x="❌"
     )
     prefix: str = "hk "
     intents: int = 131071

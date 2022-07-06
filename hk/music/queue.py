@@ -1,4 +1,5 @@
 import asyncio
+from collections import deque
 from typing import Optional, Union
 
 from discord import VoiceClient
@@ -25,6 +26,7 @@ class Lock(asyncio.Lock):
 
 
 class Queue(asyncio.Queue[BaseTrack]):
+    _queue: deque[BaseTrack]
     def __init__(self, bot: Bot, *, bound: GuildMessageable):
         super().__init__(500)
         self.bot = bot
@@ -32,6 +34,7 @@ class Queue(asyncio.Queue[BaseTrack]):
         self.guild = bound.guild
         self.lock = Lock()
         self.loop = asyncio.get_running_loop()
+        self.queue = self._queue
 
     @property
     def voice_client(self):
