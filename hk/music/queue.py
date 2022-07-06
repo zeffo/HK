@@ -4,12 +4,11 @@ from typing import Optional, Union
 
 from discord import VoiceClient
 
-
 from ..bot import Bot
 from ..protocols import GuildMessageable
-from .track import BasePlaylist, BaseTrack, Track
-from .errors import MusicException, NoVoiceChannelException
 from .audio import Audio
+from .errors import MusicException, NoVoiceChannelException
+from .track import BasePlaylist, BaseTrack, Track
 from .ytdl import YTDL
 
 
@@ -19,7 +18,7 @@ class Lock(asyncio.Lock):
     async def hold(self, track: Track):
         await self.acquire()
         self.track = track
-    
+
     def release(self) -> None:
         self.track = None
         return super().release()
@@ -27,6 +26,7 @@ class Lock(asyncio.Lock):
 
 class Queue(asyncio.Queue[BaseTrack]):
     _queue: deque[BaseTrack]
+
     def __init__(self, bot: Bot, *, bound: GuildMessageable):
         super().__init__(500)
         self.bot = bot
@@ -57,7 +57,6 @@ class Queue(asyncio.Queue[BaseTrack]):
             embed.set_footer(text=f"Now Playing\n{track.title}\n{track.runtime}")
             await self.bound.send(embed=embed, file=banner.file())
 
-
     def next(self, exception: Optional[Exception]):
         self.lock.release()
         self.loop.create_task(self.play())
@@ -69,6 +68,6 @@ class Queue(asyncio.Queue[BaseTrack]):
                 await super().put(track)
         else:
             await super().put(item)
-        
+
         if size == 0 and not self.lock.locked():
             await self.play()

@@ -35,10 +35,18 @@ class HasThumbnail:
     async def create_banner(self, session: ClientSession):
         return await Banner.create(self, session=session)
 
+
 cache: Dict[str, Banner] = {}
 
+
 class Banner:
-    def __init__(self, track: HasThumbnail, background: Tuple[int, int, int], fill: Tuple[int, int, int], image: Image.Image):
+    def __init__(
+        self,
+        track: HasThumbnail,
+        background: Tuple[int, int, int],
+        fill: Tuple[int, int, int],
+        image: Image.Image,
+    ):
         self.track = track
         self.background = background
         self.fill = fill
@@ -46,11 +54,13 @@ class Banner:
         cache[track.id] = self
 
     def embed(self):
-        return Embed(color=Color.from_rgb(*self.background)).set_image(url="attachment://track.png")
+        return Embed(color=Color.from_rgb(*self.background)).set_image(
+            url="attachment://track.png"
+        )
 
     @staticmethod
     def get_palette(
-        file: BytesIO
+        file: BytesIO,
     ) -> Tuple[Tuple[int, int, int], List[Tuple[int, int, int]]]:
         cf = ColorThief(file)
         return cf.get_color(100), cf.get_palette(15, 100)  # type: ignore
@@ -74,7 +84,9 @@ class Banner:
     ):
         x, y = 900, 300  # canvas size
         base, palette = Banner.get_palette(buffer)
-        fill = max(palette, key=lambda c: abs(Banner.ambience(base) - Banner.ambience(c)))
+        fill = max(
+            palette, key=lambda c: abs(Banner.ambience(base) - Banner.ambience(c))
+        )
         if abs(Banner.ambience(fill) - Banner.ambience(base)) < 0.3:
             fill = Banner.contrasting(base)
         gradient = Image.new("RGB", (x, y), base)
