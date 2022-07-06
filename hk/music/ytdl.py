@@ -6,7 +6,7 @@ from typing import Any, Dict, Union
 from aiohttp import ClientSession
 from yt_dlp import YoutubeDL
 
-from .errors import UnknownTrackException
+from .errors import MusicException, UnknownTrackException
 from .track import APIItem, APIResult, BasePlaylist, BaseTrack, Track
 
 __all__ = ("YTDL",)
@@ -62,7 +62,7 @@ class YTDL(YoutubeDL):
         if not isinstance(partial, Track):
             data = await cls.get_data(str(partial.id))
             if data is None:
-                return
+                raise MusicException("Couldn't download that track!")
             return Track(**data)
         return partial
 

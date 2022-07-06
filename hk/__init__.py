@@ -1,3 +1,3 @@
 from __future__ import annotations
 
-from .settings import *
+from .settings import Config

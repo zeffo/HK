@@ -4,7 +4,7 @@ import asyncio
 from html import unescape
 from io import BytesIO
 from textwrap import wrap
-from typing import Any, Dict, List, Optional, Protocol, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from aiohttp import ClientSession
 from colorthief import ColorThief
@@ -19,7 +19,7 @@ __all__ = (
     "APIResult",
     "BasePlaylist",
     "Playlist",
-    "ThumbnailCreator",
+    "Banner",
 )
 
 
@@ -32,51 +32,51 @@ class HasThumbnail:
     def get_thumbnail(self):
         return self.thumbnails[-1].url
 
-    async def create_thumbnail(self, session: ClientSession):
-        return await ThumbnailCreator(self).create(session=session)
+    async def create_banner(self, session: ClientSession):
+        return await Banner.create(self, session=session)
 
+cache: Dict[str, Banner] = {}
 
-class ThumbnailCache(type):
-    cache: Dict[str, Tuple[Embed, Image.Image]] = {}
-
-
-class ThumbnailCreator(metaclass=ThumbnailCache):
-    def __init__(self, track: HasThumbnail):
+class Banner:
+    def __init__(self, track: HasThumbnail, background: Tuple[int, int, int], fill: Tuple[int, int, int], image: Image.Image):
         self.track = track
-        self.url = track.get_thumbnail()
+        self.background = background
+        self.fill = fill
+        self.image = image
+        cache[track.id] = self
 
-    def to_cache(self, embed: Embed, image: Image.Image):
-        self.__class__.cache[self.track.id] = embed, image
+    def embed(self):
+        return Embed(color=Color.from_rgb(*self.background)).set_image(url="attachment://track.png")
 
-    @property
-    def cached(self):
-        return self.__class__.cache.get(self.track.id)
-
+    @staticmethod
     def get_palette(
-        self, file: BytesIO
+        file: BytesIO
     ) -> Tuple[Tuple[int, int, int], List[Tuple[int, int, int]]]:
         cf = ColorThief(file)
         return cf.get_color(100), cf.get_palette(15, 100)  # type: ignore
 
-    def ambience(self, color: Tuple[int, int, int]) -> float:
+    @staticmethod
+    def ambience(color: Tuple[int, int, int]) -> float:
         return (0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2]) / 255
 
-    def contrasting(self, color: Tuple[int, int, int]):
-        d = 0 if self.ambience(color) > 0.5 else 255
+    @staticmethod
+    def contrasting(color: Tuple[int, int, int]):
+        d = 0 if Banner.ambience(color) > 0.5 else 255
         return (d, d, d)
 
+    @staticmethod
     def generate(
-        self,
+        track: HasThumbnail,
         buffer: BytesIO,
         *,
         normal: str = "static/font.otf",
         bold: str = "static/bold.otf",
     ):
         x, y = 900, 300  # canvas size
-        base, palette = self.get_palette(buffer)
-        fill = max(palette, key=lambda c: abs(self.ambience(base) - self.ambience(c)))
-        if abs(self.ambience(fill) - self.ambience(base)) < 0.3:
-            fill = self.contrasting(base)
+        base, palette = Banner.get_palette(buffer)
+        fill = max(palette, key=lambda c: abs(Banner.ambience(base) - Banner.ambience(c)))
+        if abs(Banner.ambience(fill) - Banner.ambience(base)) < 0.3:
+            fill = Banner.contrasting(base)
         gradient = Image.new("RGB", (x, y), base)
         tx, ty = 250, 170
         thumbnail = Image.open(buffer).resize((tx, ty))
@@ -85,8 +85,8 @@ class ThumbnailCreator(metaclass=ThumbnailCache):
         pen = ImageDraw.Draw(gradient)
         _normal = ImageFont.truetype(normal, 20)
         _bold = ImageFont.truetype(bold, 40)
-        title = "\n".join(wrap(self.track.title, 24, max_lines=2))
-        uploader = "By " + self.track.uploader
+        title = "\n".join(wrap(track.title, 24, max_lines=2))
+        uploader = "By " + track.uploader
         start = tx + gap
         tbox = pen.multiline_textbbox((start, gap), title, font=_bold, spacing=20)
         ubox = pen.textbbox((start, tbox[3] + gap / 2), uploader, font=_normal)
@@ -99,27 +99,21 @@ class ThumbnailCreator(metaclass=ThumbnailCache):
             font=_normal,
             fill=fill,
         )
-        file = self.save(gradient)
-        embed = Embed(color=Color.from_rgb(*base))
-        embed.set_image(url="attachment://track.png")
-        self.to_cache(embed, gradient)
-        return embed, file
+        return Banner(track, base, fill, gradient)
 
-    def save(self, image: Image.Image):
+    def file(self):
         buffer = BytesIO()
-        image.save(buffer, format="png")
+        self.image.save(buffer, format="png")
         buffer.seek(0)
         return File(buffer, filename="track.png")
 
-    async def create(self, *, session: ClientSession):
-        if cached := self.cached:
-            embed, image = cached
-            return embed, self.save(image)
-
-        async with session.get(self.url) as resp:
+    @classmethod
+    async def create(cls, track: HasThumbnail, *, session: ClientSession):
+        if banner := cache.get(track.id):
+            return banner
+        async with session.get(track.get_thumbnail()) as resp:
             buffer = BytesIO(await resp.content.read())
-        embed, file = await asyncio.to_thread(self.generate, buffer)
-        return embed, file
+        return await asyncio.to_thread(Banner.generate, track, buffer)
 
 
 class Thumbnail(BaseModel):

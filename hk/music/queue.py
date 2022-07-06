@@ -1,16 +1,13 @@
 import asyncio
-from typing import Any, Optional, Protocol, Sequence, Union, overload
+from typing import Optional, Union
 
-from discord import (AllowedMentions, Embed, File, Guild, GuildSticker,
-                     Message, MessageReference, PartialMessage, StickerItem, VoiceClient)
-from discord.abc import GuildChannel, Messageable
-from discord.ui import View
+from discord import VoiceClient
 
 
 from ..bot import Bot
 from ..protocols import GuildMessageable
 from .track import BasePlaylist, BaseTrack, Track
-from .errors import NoVoiceChannelException
+from .errors import MusicException, NoVoiceChannelException
 from .audio import Audio
 from .ytdl import YTDL
 
@@ -34,6 +31,7 @@ class Queue(asyncio.Queue[BaseTrack]):
         self.bound = bound
         self.guild = bound.guild
         self.lock = Lock()
+        self.loop = asyncio.get_running_loop()
 
     @property
     def voice_client(self):
@@ -43,16 +41,23 @@ class Queue(asyncio.Queue[BaseTrack]):
 
     async def play(self):
         partial = await self.get()
-        track = await YTDL.to_track(partial)
-        if track:
+        try:
+            track = await YTDL.to_track(partial)
+        except MusicException as e:
+            self.next(e)
+        else:
             await self.lock.hold(track)
             source = Audio(track.url)
             self.voice_client.play(source, after=self.next)
-            embed, file = await track.create_thumbnail(self.bot.session)
-            embed.set_footer(text=f"")
+            banner = await track.create_banner(self.bot.session)
+            embed = banner.embed()
+            embed.set_footer(text=f"Now Playing\n{track.title}\n{track.runtime}")
+            await self.bound.send(embed=embed, file=banner.file())
+
 
     def next(self, exception: Optional[Exception]):
-        asyncio.create_task(self.play())
+        self.lock.release()
+        self.loop.create_task(self.play())
 
     async def put(self, item: Union[BaseTrack, BasePlaylist]):
         size = self.qsize()
