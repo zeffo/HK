@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from collections import deque
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
-from discord import VoiceClient
+from discord import Embed, Message, NotFound, VoiceClient
 
 from ..bot import Bot
 from ..protocols import GuildMessageable
@@ -24,6 +26,36 @@ class Lock(asyncio.Lock):
         return super().release()
 
 
+class NowPlayingTask(asyncio.Task[Any]):
+    def __init__(self, message: Message, queue: Queue, *, buffer: int = 10):
+        self.queue = queue
+        self.message = message
+        self.track = queue.lock.track
+        self.buffer = buffer
+        super().__init__(self.task())
+
+    async def task(self):
+        track = self.track
+        while self.queue.lock.track == track:
+            await asyncio.sleep(self.buffer)
+            if track is not None:
+                banner = await track.create_banner(self.queue.bot.session)
+                embed = banner.embed().set_footer(
+                    text=f"Now Playing\n{track.title}\n{self.queue.progress}"
+                )
+                try:
+                    await self.message.edit(embed=embed, attachments=[banner.file()])
+                except NotFound:
+                    break
+        await self.stop()
+
+    async def stop(self):
+        try:
+            await self.message.delete()
+        finally:
+            self.cancel()
+
+
 class Queue(asyncio.Queue[BaseTrack]):
     _queue: deque[BaseTrack]
 
@@ -42,6 +74,23 @@ class Queue(asyncio.Queue[BaseTrack]):
             return self.guild.voice_client
         raise NoVoiceChannelException
 
+    @property
+    def source(self):
+        s = self.voice_client.source
+        if isinstance(s, Audio):
+            return s
+        raise MusicException("Invalid AudioSource")
+
+    @property
+    def progress(self) -> str:
+        if track := self.lock.track:
+            src = self.source.seconds()
+            pct = round(src * 100 / track.duration, 2)
+            ret = f"{src/60:.2f}/{track.runtime} | {pct}%"
+        else:
+            ret = "No track is playing :("
+        return ret
+
     async def play(self):
         partial = await self.get()
         try:
@@ -55,7 +104,8 @@ class Queue(asyncio.Queue[BaseTrack]):
             banner = await track.create_banner(self.bot.session)
             embed = banner.embed()
             embed.set_footer(text=f"Now Playing\n{track.title}\n{track.runtime}")
-            await self.bound.send(embed=embed, file=banner.file())
+            message = await self.bound.send(embed=embed, file=banner.file())
+            NowPlayingTask(message, self)
 
     def next(self, exception: Optional[Exception]):
         self.lock.release()

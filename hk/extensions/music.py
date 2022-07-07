@@ -8,7 +8,8 @@ from discord.ext import commands
 from discord.ui import Button, Select, View
 from discord.utils import MISSING
 
-from ..music import YTDL, BasePlaylist, BaseTrack, Payload, Queue
+from ..music import (YTDL, BasePlaylist, BaseTrack, NowPlayingTask, Payload,
+                     Queue)
 from ..views import Paginator, Unit
 
 if TYPE_CHECKING:
@@ -118,7 +119,9 @@ class QueueView(Paginator):
         bot = payload.bot
         if np := queue.lock.track:
             banner = await np.create_banner(bot.session)
-            embed = banner.embed().set_footer(text=f"Now Playing\n{np.title}")
+            embed = banner.embed().set_footer(
+                text=f"Now Playing\n{np.title}\n{queue.progress}"
+            )
             start = Unit(embed=embed, files=[banner.file()])
         else:
             start = Unit(
@@ -193,6 +196,25 @@ class Music(commands.Cog):
         """See the current and upcoming tracks"""
         payload = await Payload.from_interaction(self.bot, iact)
         await QueueView.display(payload, self.get_queue(payload))
+
+    @app_commands.command()
+    async def nowplaying(self, iact: Interaction):
+        """See the currently playing track and it's progress"""
+        payload = await Payload.from_interaction(self.bot, iact)
+        queue = self.get_queue(payload)
+        if track := queue.lock.track:
+            banner = await track.create_banner(self.bot.session)
+            await iact.response.send_message(
+                embed=banner.embed().set_footer(text=f"Now Playing\n{track.title}"),
+                file=banner.file(),
+            )
+            NowPlayingTask(await iact.original_message(), queue)
+        else:
+            await iact.response.send_message(
+                embed=Embed(
+                    description="Nothing is playing :(", color=self.bot.conf.color
+                )
+            )
 
 
 async def setup(bot: Bot):
