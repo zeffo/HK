@@ -98,16 +98,20 @@ class PlayView(BaseMusicView):
         )
 
     async def enqueue(self, interaction: Interaction):
+        track = self.select.items[int(self.select.values[0])]
         if message := interaction.message:
-            if self.queue.qsize() == 0 and not self.queue.lock.locked():
-                await message.delete()
+            if (
+                self.queue.qsize() == 0
+                and not self.queue.lock.locked()
+                and isinstance(track, BaseTrack)
+            ):
+                await message.delete()  # avoid repeated "Queued" embeds for first-time singleton tracks
             else:
                 embed = interaction.message.embeds[0]
                 embed.set_footer(text="Queued\n" + str(embed.footer.text))
                 await interaction.response.edit_message(
                     view=None, embed=embed, attachments=message.attachments
                 )
-        track = self.select.items[int(self.select.values[0])]
         await self.queue.put(track)
 
 
@@ -204,7 +208,9 @@ class Music(commands.Cog):
         if track := queue.lock.track:
             banner = await track.create_banner(self.bot.session)
             await iact.response.send_message(
-                embed=banner.embed().set_footer(text=f"Now Playing\n{track.title}\n{queue.progress}"),
+                embed=banner.embed().set_footer(
+                    text=f"Now Playing\n{track.title}\n{queue.progress}"
+                ),
                 file=banner.file(),
             )
             NowPlayingTask(await iact.original_message(), queue)
