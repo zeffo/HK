@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import asyncio
 from collections import deque
-from typing import Any, Optional, Union
+from typing import Any, Optional, Set, Union
 
-from discord import Embed, Message, NotFound, VoiceClient
+from discord import Message, NotFound, VoiceClient
 
 from ..bot import Bot
 from ..protocols import GuildMessageable
@@ -32,6 +32,7 @@ class NowPlayingTask(asyncio.Task[Any]):
         self.message = message
         self.track = queue.lock.track
         self.buffer = buffer
+        queue.tasks.add(self)
         super().__init__(self.task())
 
     async def task(self):
@@ -52,8 +53,10 @@ class NowPlayingTask(asyncio.Task[Any]):
     async def stop(self):
         try:
             await self.message.delete()
-        finally:
-            self.cancel()
+        except NotFound:
+            pass
+
+        self.cancel()
 
 
 class Queue(asyncio.Queue[BaseTrack]):
@@ -67,6 +70,7 @@ class Queue(asyncio.Queue[BaseTrack]):
         self.lock = Lock()
         self.loop = asyncio.get_running_loop()
         self.queue = self._queue
+        self.tasks: Set[NowPlayingTask] = set()
 
     @property
     def voice_client(self):
@@ -110,6 +114,9 @@ class Queue(asyncio.Queue[BaseTrack]):
     def next(self, exception: Optional[Exception]):
         self.lock.release()
         self.loop.create_task(self.play())
+        while self.tasks:
+            task = self.tasks.pop()
+            self.loop.create_task(task.stop())
 
     async def put(self, item: Union[BaseTrack, BasePlaylist]):
         size = self.qsize()

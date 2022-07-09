@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 from discord import (ButtonStyle, Embed, Guild, Interaction, SelectOption,
                      app_commands)
@@ -88,9 +88,10 @@ class PlayView(BaseMusicView):
         head = items[0]
         banner = await head.create_banner(payload.bot.session)
         embed = banner.embed()
-        embed.set_footer(
-            text=f"{head.title}\nby {head.uploader}\n{len(head.entries) if isinstance(head, BasePlaylist) else ''}"
-        )
+        text = f"{head.title}\nby {head.uploader}"
+        if isinstance(head, BasePlaylist):
+            text += f"\n{len(head.entries)} tracks"
+        embed.set_footer(text=text)
         await payload.interaction.followup.send(
             embed=embed,
             file=banner.file(),
@@ -188,7 +189,7 @@ class Music(commands.Cog):
             embed.set_footer(text=np.title, icon_url=np.get_thumbnail())
             payload.voice_client.stop()
         else:
-            embed = Embed(description="Nothing to skip!", color=self.bot.conf.color)
+            embed = Embed(description="Nothing to skip :(", color=self.bot.conf.color)
         await iact.response.send_message(embed=embed)
 
     @app_commands.command()
@@ -215,6 +216,19 @@ class Music(commands.Cog):
                     description="Nothing is playing :(", color=self.bot.conf.color
                 )
             )
+
+    @app_commands.command()
+    async def volume(self, iact: Interaction, volume: Optional[float]):
+        payload = await Payload.from_interaction(self.bot, iact)
+        queue = self.get_queue(payload)
+        if volume:
+            queue.source.volume = volume
+
+        await iact.response.send_message(
+            embed=Embed(
+                description=f"Volume: {queue.source.volume}", color=self.bot.conf.color
+            )
+        )
 
 
 async def setup(bot: Bot):
