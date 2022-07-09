@@ -2,14 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
-from discord import (ButtonStyle, Embed, Guild, Interaction, SelectOption,
-                     app_commands)
+from discord import ButtonStyle, Embed, Guild, Interaction, SelectOption, app_commands
 from discord.ext import commands
 from discord.ui import Button, Select, View
 from discord.utils import MISSING
 
-from ..music import (YTDL, BasePlaylist, BaseTrack, NowPlayingTask, Payload,
-                     Queue)
+from ..music import YTDL, BasePlaylist, BaseTrack, NowPlayingTask, Payload, Queue
 from ..views import Paginator, Unit
 
 if TYPE_CHECKING:
@@ -206,7 +204,7 @@ class Music(commands.Cog):
         if track := queue.lock.track:
             banner = await track.create_banner(self.bot.session)
             await iact.response.send_message(
-                embed=banner.embed().set_footer(text=f"Now Playing\n{track.title}"),
+                embed=banner.embed().set_footer(text=f"Now Playing\n{track.title}\n{queue.progress}"),
                 file=banner.file(),
             )
             NowPlayingTask(await iact.original_message(), queue)
@@ -219,6 +217,7 @@ class Music(commands.Cog):
 
     @app_commands.command()
     async def volume(self, iact: Interaction, volume: Optional[float]):
+        """See or set the playback volume"""
         payload = await Payload.from_interaction(self.bot, iact)
         queue = self.get_queue(payload)
         if volume:

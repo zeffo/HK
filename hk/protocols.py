@@ -1,8 +1,16 @@
-from typing import (Any, Optional, Protocol, Sequence, Union, overload,
-                    runtime_checkable)
+from typing import Any, Optional, Protocol, Sequence, Union, overload, runtime_checkable
 
-from discord import (AllowedMentions, Embed, File, Guild, GuildSticker,
-                     Message, MessageReference, PartialMessage, StickerItem)
+from discord import (
+    AllowedMentions,
+    Embed,
+    File,
+    Guild,
+    GuildSticker,
+    Message,
+    MessageReference,
+    PartialMessage,
+    StickerItem,
+)
 from discord.ui import View
 
 __all__ = ("GuildMessageable",)

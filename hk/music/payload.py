@@ -2,8 +2,11 @@ from discord import Guild, Interaction, Member, VoiceClient
 
 from ..bot import Bot
 from ..protocols import GuildMessageable
-from .errors import (DifferentVoiceChannelException, MusicException,
-                     NoVoiceChannelException)
+from .errors import (
+    DifferentVoiceChannelException,
+    MusicException,
+    NoVoiceChannelException,
+)
 
 
 class Payload:

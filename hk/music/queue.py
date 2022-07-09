@@ -102,6 +102,7 @@ class Queue(asyncio.Queue[BaseTrack]):
         except MusicException as e:
             self.next(e)
         else:
+            asyncio.gather(*[task.stop() for task in self.tasks])
             await self.lock.hold(track)
             source = Audio(track.url)
             self.voice_client.play(source, after=self.next)
@@ -114,9 +115,6 @@ class Queue(asyncio.Queue[BaseTrack]):
     def next(self, exception: Optional[Exception]):
         self.lock.release()
         self.loop.create_task(self.play())
-        while self.tasks:
-            task = self.tasks.pop()
-            self.loop.create_task(task.stop())
 
     async def put(self, item: Union[BaseTrack, BasePlaylist]):
         size = self.qsize()
