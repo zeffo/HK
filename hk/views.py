@@ -7,7 +7,6 @@ from discord import ButtonStyle, Embed, File, Interaction
 from discord.ui import Button, View, button
 
 from .bot import Bot
-from .music import Payload, Queue
 
 
 class Unit:
@@ -41,7 +40,7 @@ class Paginator(View):
             if isinstance(child, Button):
                 if child.style == ButtonStyle.secondary:
                     child.style = ButtonStyle.primary
-                child.emoji = self.bot.conf.emojis[child.callback.callback.__name__]  # type: ignore (child.callback isinstance _ViewCallback here)
+                child.emoji = self.bot.conf.emojis[child.callback.callback.__name__]  # type: ignore (child.callback is _ViewCallback here)
 
     async def edit(self, iact: Interaction, *, page: int):
         self.page = page

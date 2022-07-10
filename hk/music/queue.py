@@ -39,6 +39,7 @@ class NowPlayingTask(asyncio.Task[Any]):
         track = self.track
         while self.queue.lock.track == track:
             await asyncio.sleep(self.buffer)
+            await self.queue.playing.wait()
             if track is not None:
                 banner = await track.create_banner(self.queue.bot.session)
                 embed = banner.embed().set_footer(
@@ -71,6 +72,7 @@ class Queue(asyncio.Queue[BaseTrack]):
         self.loop = asyncio.get_running_loop()
         self.queue = self._queue
         self.tasks: Set[NowPlayingTask] = set()
+        self.playing = asyncio.Event()
 
     @property
     def voice_client(self):
@@ -85,12 +87,22 @@ class Queue(asyncio.Queue[BaseTrack]):
             return s
         raise MusicException("Invalid AudioSource")
 
+    def pause(self):
+        self.playing.clear()
+        self.voice_client.pause()
+
+    def resume(self):
+        self.playing.set()
+        self.voice_client.resume()
+
     @property
     def progress(self) -> str:
         if track := self.lock.track:
             src = self.source.seconds()
             pct = round(src * 100 / track.duration, 2)
             ret = f"{src/60:.2f}/{track.runtime} | {pct}%"
+            if self.voice_client.is_paused():
+                ret += "\nPaused"
         else:
             ret = "No track is playing :("
         return ret
@@ -102,6 +114,7 @@ class Queue(asyncio.Queue[BaseTrack]):
         except MusicException as e:
             self.next(e)
         else:
+            self.playing.set()
             asyncio.gather(*[task.stop() for task in self.tasks])
             await self.lock.hold(track)
             source = Audio(track.url)
@@ -113,6 +126,7 @@ class Queue(asyncio.Queue[BaseTrack]):
             NowPlayingTask(message, self)
 
     def next(self, exception: Optional[Exception]):
+        self.playing.clear()
         self.lock.release()
         self.loop.create_task(self.play())
 

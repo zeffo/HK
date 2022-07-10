@@ -1,8 +1,17 @@
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
-from discord import ButtonStyle, Embed, Guild, Interaction, SelectOption, app_commands
+from discord import (
+    ButtonStyle,
+    Embed,
+    Guild,
+    Interaction,
+    Member,
+    SelectOption,
+    app_commands,
+)
 from discord.ext import commands
 from discord.ui import Button, Select, View
 from discord.utils import MISSING
@@ -131,9 +140,9 @@ class QueueView(Paginator):
                 embed=Embed(description="The queue is empty :(", color=bot.conf.color)
             )
         items = [start]
-        for i in range(0, len(tracks), 5):
+        for i in range(0, len(tracks), 10):
             content = "\n".join(
-                f"{i+x}. {t.title}" for x, t in enumerate(tracks[i : i + 5])
+                f"{i+x}. {t.title}" for x, t in enumerate(tracks[i : i + 10])
             )
             embed = Embed(description=f"```md\n{content}\n```", color=bot.conf.color)
             items.append(Unit(embed=embed))
@@ -165,7 +174,8 @@ class Music(commands.Cog):
     async def pause(self, iact: Interaction):
         """Pause the current track"""
         payload = await Payload.from_interaction(self.bot, iact)
-        payload.voice_client.pause()
+        queue = self.get_queue(payload)
+        queue.pause()
         await iact.response.send_message(
             embed=Embed(description="Paused!", color=self.bot.conf.color)
         )
@@ -174,7 +184,8 @@ class Music(commands.Cog):
     async def resume(self, iact: Interaction):
         """Resume the current track"""
         payload = await Payload.from_interaction(self.bot, iact)
-        payload.voice_client.resume()
+        queue = self.get_queue(payload)
+        queue.resume()
         await iact.response.send_message(
             embed=Embed(description="Resumed!", color=self.bot.conf.color)
         )
@@ -234,6 +245,14 @@ class Music(commands.Cog):
                 description=f"Volume: {queue.source.volume}", color=self.bot.conf.color
             )
         )
+
+    @app_commands.command()
+    async def boing(self, iact: Interaction, target: Member):
+        """Boings the target across all the voice channels in the guild."""
+        await iact.response.send_message(f"boinging {target.name}")
+        payload = Payload.validate(self.bot, iact)
+        tasks = [payload.user.move_to(vc) for vc in payload.guild.voice_channels]
+        asyncio.gather(*tasks)
 
 
 async def setup(bot: Bot):

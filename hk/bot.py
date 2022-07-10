@@ -25,7 +25,6 @@ class Bot(commands.Bot):
         return await super().start(self.conf.env["DISCORD"], *args, **kwargs)
 
     async def setup_hook(self) -> None:
-
         for file in Path("hk/extensions").glob("**/*.py"):
             *tree, _ = file.parts
             try:

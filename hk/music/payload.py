@@ -4,7 +4,7 @@ from ..bot import Bot
 from ..protocols import GuildMessageable
 from .errors import (
     DifferentVoiceChannelException,
-    MusicException,
+    GuildOnlyException,
     NoVoiceChannelException,
 )
 
@@ -20,7 +20,7 @@ class Payload:
         voice_client: VoiceClient,
         user: Member,
         channel: GuildMessageable,
-        interaction: Interaction
+        interaction: Interaction,
     ):
         self.bot = bot
         self.guild = guild
@@ -30,27 +30,22 @@ class Payload:
         self.interaction = interaction
 
     @classmethod
-    async def from_interaction(cls, bot: Bot, iact: Interaction):
-        try:
-            assert (
-                isinstance(iact.user, Member)
-                and iact.guild is not None
-                and isinstance(iact.channel, GuildMessageable)
-            ), "This command can only be used in a server!"
+    def validate(cls, bot: Bot, iact: Interaction):
+        if (
+            isinstance(iact.user, Member)
+            and iact.guild is not None
+            and isinstance(iact.channel, GuildMessageable)
+        ):
             vstate, vclient = iact.user.voice, iact.guild.voice_client
             vc = vstate.channel if vstate else None
             if not vstate or not vc:
                 raise NoVoiceChannelException
-            if vc and not vclient:
-                vclient = await vc.connect()
-            assert isinstance(vclient, VoiceClient)
-            if vclient and vc != vclient.channel:
-                if len(vclient.channel.members) == 1:
-                    await vclient.move_to(vc)
-                else:
-                    raise DifferentVoiceChannelException
-        except AssertionError as e:
-            raise MusicException(str(e))
+            if not isinstance(vclient, VoiceClient) or (vc and not vclient):
+                raise DifferentVoiceChannelException(vc, None)
+            if vc != vclient.channel:
+                raise DifferentVoiceChannelException(vc, vclient.channel)
+        else:
+            raise GuildOnlyException
 
         return cls(
             bot=bot,
@@ -60,3 +55,17 @@ class Payload:
             channel=iact.channel,
             interaction=iact,
         )
+
+    @classmethod
+    async def from_interaction(cls, bot: Bot, iact: Interaction):
+        try:
+            payload = cls.validate(bot, iact)
+        except DifferentVoiceChannelException as e:
+            if e.bot_vc is not None and len(e.bot_vc.members) == 1:
+                if guild := iact.guild:
+                    await guild.me.move_to(e.user_vc)
+            else:
+                await e.user_vc.connect()
+            return cls.validate(bot, iact)
+
+        return payload

@@ -9,6 +9,7 @@ from discord.ext import commands
 
 from ..bot import Bot
 from ..music import MusicException
+from ..protocols import GuildMessageable
 
 logger = logging.getLogger("discord")
 
@@ -37,11 +38,17 @@ class Errors(commands.Cog):
             )
             buffer.seek(0)
             buffer = BytesIO(buffer.getvalue().encode("utf-8"))
-            await interaction.response.send_message(
-                "Observation: I seem to have ran into a problem.",
-                file=File(buffer, "traceback.txt"),
-            )
-            logger.error(buffer.getvalue())
+            if isinstance(interaction.channel, GuildMessageable):
+                send = (
+                    interaction.response.send_message
+                    if not interaction.response.is_done()
+                    else interaction.channel.send
+                )
+                await send(
+                    "Observation: I seem to have ran into a problem.",
+                    file=File(buffer, "traceback.txt"),
+                )
+                logger.error(buffer.getvalue())
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context[Any], error: Any):
