@@ -1,26 +1,23 @@
-from typing import Union
-
-from discord import StageChannel, VoiceChannel
 from discord.app_commands import AppCommandError
 
 
 class MusicException(AppCommandError):
-    """Base exception for the Music cog"""
+    """Base exception for the music package"""
 
 
-UnknownTrackException = MusicException("Could not find that song!")
-NoVoiceChannelException = MusicException("You must be in a voice channel!")
+class UnknownTrackException(MusicException):
+    """Raised when the YouTube API is unable to return data"""
 
-GuildOnlyException = MusicException("This command can only be used in a server!")
+    def __init__(self, query: str):
+        self.query = query
+
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.query}"
 
 
-class DifferentVoiceChannelException(MusicException):
-    """Raised when the user and bot are not in the same voice channel"""
+class NoVoiceException(MusicException):
+    """Raised when a guild's voice client is non-existent"""
 
-    def __init__(
-        self,
-        user_vc: Union[VoiceChannel, StageChannel],
-        bot_vc: Union[VoiceChannel, StageChannel, None],
-    ):
-        self.user_vc = user_vc
-        self.bot_vc = bot_vc
+
+class GuildOnlyException(MusicException):
+    """Raised when a command is used in a DM"""

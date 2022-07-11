@@ -6,7 +6,7 @@ from typing import Any, Dict, Union
 from aiohttp import ClientSession
 from yt_dlp import YoutubeDL
 
-from .errors import MusicException, UnknownTrackException
+from .errors import UnknownTrackException
 from .track import APIItem, APIResult, BasePlaylist, BaseTrack, Track
 
 __all__ = ("YTDL",)
@@ -54,15 +54,16 @@ class YTDL(YoutubeDL):
         async with session.get(SEARCH.format(query, api_key)) as resp:
             json = await resp.json()
             if not json.get("items"):
-                raise UnknownTrackException
+                raise UnknownTrackException(query)
             return APIResult(**json)
 
     @classmethod
     async def to_track(cls, partial: Union[BaseTrack, APIItem]):
         if not isinstance(partial, Track):
-            data = await cls.get_data(str(partial.id))
+            _id = str(partial.id)
+            data = await cls.get_data(_id)
             if data is None:
-                raise MusicException("Couldn't download that track!")
+                raise UnknownTrackException(_id)
             return Track(**data)
         return partial
 

@@ -1,7 +1,9 @@
+from asyncio import Event, Lock
 from io import BufferedIOBase
-from typing import Dict, Union
+from typing import Any, Callable, Dict, Optional, Union
+from .track import Track
 
-from discord import AudioSource, FFmpegPCMAudio, PCMVolumeTransformer
+from discord import AudioSource, FFmpegPCMAudio, PCMVolumeTransformer, VoiceClient
 
 FFMPEG_OPTS = {
     "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
@@ -29,3 +31,33 @@ class Audio(PCMVolumeTransformer[AudioSource]):
 
     def seconds(self):
         return round(self.done / 1000, 2)
+
+
+class Voice(VoiceClient):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.lock = Lock()
+        self.resumed = Event()
+        self.track: Optional[Track] = None
+
+    def _wrap_next(self, fn: Callable[..., Any]):
+        def inner(ex: Optional[Exception] = None):
+            self.lock.release()
+            self.resumed.clear()
+            fn(ex)
+
+        return inner
+
+    async def play(self, track: Track, *, after: Callable[[Optional[Exception]], Any]):  # type: ignore
+        await self.lock.acquire()
+        self.track = track
+        src = Audio(track.url)
+        super().play(src, after=self._wrap_next(after))
+
+    def pause(self) -> None:
+        self.resumed.clear()
+        return super().pause()
+
+    def resume(self) -> None:
+        self.resumed.set()
+        return super().resume()

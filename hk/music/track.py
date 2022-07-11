@@ -4,7 +4,7 @@ import asyncio
 from html import unescape
 from io import BytesIO
 from textwrap import wrap
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TypedDict
 
 from aiohttp import ClientSession
 from colorthief import ColorThief
@@ -23,14 +23,14 @@ __all__ = (
 )
 
 
-class HasThumbnail:
+class ThumbnailMixin:
     id: str
     title: str
     uploader: str
     thumbnails: List[Thumbnail]
 
     def get_thumbnail(self):
-        return self.thumbnails[-1].url
+        return self.thumbnails[-1]["url"]
 
     async def create_banner(self, session: ClientSession):
         return await Banner.create(self, session=session)
@@ -42,7 +42,7 @@ cache: Dict[str, Banner] = {}
 class Banner:
     def __init__(
         self,
-        track: HasThumbnail,
+        track: ThumbnailMixin,
         background: Tuple[int, int, int],
         fill: Tuple[int, int, int],
         image: Image.Image,
@@ -51,12 +51,14 @@ class Banner:
         self.background = background
         self.fill = fill
         self.image = image
-        cache[track.id] = self
-
-    def embed(self):
-        return Embed(color=Color.from_rgb(*self.background)).set_image(
+        self._embed = Embed(color=Color.from_rgb(*self.background)).set_image(
             url="attachment://track.png"
         )
+        cache[track.id] = self
+
+    @property
+    def embed(self):
+        return self._embed.copy()
 
     @staticmethod
     def get_palette(
@@ -76,7 +78,7 @@ class Banner:
 
     @staticmethod
     def generate(
-        track: HasThumbnail,
+        track: ThumbnailMixin,
         buffer: BytesIO,
         *,
         normal: str = "static/font.otf",
@@ -120,7 +122,7 @@ class Banner:
         return File(buffer, filename="track.png")
 
     @classmethod
-    async def create(cls, track: HasThumbnail, *, session: ClientSession):
+    async def create(cls, track: ThumbnailMixin, *, session: ClientSession):
         if banner := cache.get(track.id):
             return banner
         async with session.get(track.get_thumbnail()) as resp:
@@ -128,11 +130,11 @@ class Banner:
         return await asyncio.to_thread(Banner.generate, track, buffer)
 
 
-class Thumbnail(BaseModel):
+class Thumbnail(TypedDict):
     url: str
 
 
-class BaseTrack(HasThumbnail, BaseModel):
+class BaseTrack(ThumbnailMixin, BaseModel):
     id: str
     title: str
     description: Optional[str]
@@ -219,7 +221,7 @@ class APIResult(BaseModel):
         return tracks
 
 
-class BasePlaylist(HasThumbnail, BaseModel):
+class BasePlaylist(ThumbnailMixin, BaseModel):
     id: str
     title: str
     uploader: str = "Unknown Uploader"
