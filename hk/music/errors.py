@@ -18,6 +18,8 @@ class UnknownTrackException(MusicException):
 class NoVoiceException(MusicException):
     """Raised when a guild's voice client is non-existent"""
 
-
 class GuildOnlyException(MusicException):
     """Raised when a command is used in a DM"""
+
+class DifferentVoiceException(MusicException):
+    """Raised when a user's voice channel is different from the bot's"""

@@ -1,6 +1,6 @@
 from asyncio import Event, Lock
 from io import BufferedIOBase
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union, cast
 from .track import Track
 
 from discord import AudioSource, FFmpegPCMAudio, PCMVolumeTransformer, VoiceClient
@@ -39,6 +39,7 @@ class Voice(VoiceClient):
         self.lock = Lock()
         self.resumed = Event()
         self.track: Optional[Track] = None
+        self._volume: float = 0.5
 
     def _wrap_next(self, fn: Callable[..., Any]):
         def inner(ex: Optional[Exception] = None):
@@ -51,7 +52,7 @@ class Voice(VoiceClient):
     async def play(self, track: Track, *, after: Callable[[Optional[Exception]], Any]):  # type: ignore
         await self.lock.acquire()
         self.track = track
-        src = Audio(track.url)
+        src = Audio(track.url, volume=self._volume)
         super().play(src, after=self._wrap_next(after))
 
     def pause(self) -> None:
@@ -61,3 +62,14 @@ class Voice(VoiceClient):
     def resume(self) -> None:
         self.resumed.set()
         return super().resume()
+
+    @property
+    def volume(self):
+        return self._volume
+
+    @volume.setter
+    def volume(self, vol: float):
+        self._volume = vol
+        if self.source:
+            src = cast(Audio, self.source)
+            src.volume = vol

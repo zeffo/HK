@@ -21,6 +21,7 @@ class Errors(commands.Cog):
         bot.tree.error(self.app_command_error)
 
     async def app_command_error(self, interaction: Interaction, error: AppCommandError):
+        print(error)
         embed = None
         if isinstance(error, MusicException):
             embed = Embed(description=error)
