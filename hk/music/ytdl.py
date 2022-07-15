@@ -53,10 +53,11 @@ class YTDL(YoutubeDL):
 
     @classmethod
     async def from_api(cls, query: str, *, session: ClientSession, api_key: str):
-        async with session.get(SEARCH.format(query, api_key)) as resp:
-            json = await resp.json()
-            return APIResult(**json)
-        raise UnknownTrackException(query)
+        resp = await session.get(SEARCH.format(query, api_key))
+        json = await resp.json()
+        if len(json["entries"]) == 0:
+            raise UnknownTrackException(query)
+        return APIResult(**json)
 
     @classmethod
     async def to_track(cls, partial: Union[BaseTrack, APIItem]):

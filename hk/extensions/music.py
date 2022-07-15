@@ -183,12 +183,12 @@ class PlayView(BaseMusicView):
 class QueueView(Paginator):
     @classmethod
     async def display(cls, payload: Payload, queue: Queue):
-        tracks = list(queue.queue)
+        tracks = list(queue.deque)
         bot = payload.bot
         if np := queue.voice.track:
             banner = await np.create_banner(bot.session)
             embed = banner.embed.set_footer(
-                text=f"Now Playing\n{np.title}\n{queue.progress}"
+                text=f"{queue.progress}\n{queue.qsize()} tracks left"
             )
             start = Unit(embed=embed, files=[banner.file()])
         else:
@@ -247,15 +247,25 @@ class Music(commands.Cog):
         )
 
     @app_commands.command()
-    async def skip(self, iact: Interaction):
+    @app_commands.describe(to="The index to skip to")
+    async def skip(self, iact: Interaction, to: int = 0):
         """Skip the current track"""
         payload = await Payload.validate(self.bot, iact)
         queue = self.get_queue(payload)
-        if np := queue.voice.track:
+        if to >= queue.qsize():
+            embed = Embed(
+                description=f"There are only {queue.qsize()} tracks in the queue!",
+                color=self.bot.conf.color,
+            )
+        elif np := queue.voice.track:
             banner = await np.create_banner(self.bot.session)
             embed = banner.embed
             embed.description = "Skipping"
-            embed.set_footer(text=np.title, icon_url=np.get_thumbnail())
+            skipped = [queue.deque.popleft() for _ in range(to)]
+            text = np.title
+            if skipped:
+                text += f"\n(and {len(skipped)} tracks)"
+            embed.set_footer(text=text, icon_url=np.get_thumbnail())
             payload.voice_client.stop()
         else:
             embed = Embed(description="Nothing to skip :(", color=self.bot.conf.color)

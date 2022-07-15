@@ -15,7 +15,7 @@ from .ytdl import YTDL
 class Queue(asyncio.Queue[BaseTrack]):
     def __init__(self, bot: Bot, *, bound: GuildMessageable):
         super().__init__()
-        self.queue: deque[BaseTrack] = self._queue  # type: ignore
+        self.deque: deque[BaseTrack] = self._queue  # type: ignore
         self.guild = bound.guild
         self.bound = bound
         self.loop = asyncio.get_running_loop()
