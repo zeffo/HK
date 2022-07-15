@@ -1,16 +1,37 @@
 import asyncio
-from discord import Guild, Interaction, Member
-from discord import app_commands, SelectOption, ButtonStyle, Embed
+from logging import getLogger
+from time import perf_counter
+from typing import Any, Dict, Optional, Union, cast
+
+from discord import (
+    ButtonStyle,
+    Embed,
+    Guild,
+    Interaction,
+    Member,
+    SelectOption,
+    app_commands,
+)
+from discord.ext import commands
+from discord.ui import Button, Select, View
+from discord.utils import MISSING
 
 from hk.music.errors import NoVoiceException
+
 from ..bot import Bot
-from ..music import Queue, GuildOnlyException, YTDL, BaseTrack, BasePlaylist, Voice, DifferentVoiceException
+from ..music import (
+    YTDL,
+    BasePlaylist,
+    BaseTrack,
+    DifferentVoiceException,
+    GuildOnlyException,
+    Queue,
+    Voice,
+)
 from ..protocols import GuildMessageable
 from ..views import Paginator, Unit
-from discord.utils import MISSING
-from discord.ext import commands
-from typing import Dict, Optional, Union, Any, cast
-from discord.ui import View, Select, Button
+
+logger = getLogger("discord")
 
 
 class Payload:
@@ -59,6 +80,7 @@ class Payload:
             interaction=iact,
         )
 
+
 class BaseMusicView(View):
     payload: Payload
 
@@ -97,7 +119,9 @@ class TrackSelect(Select["PlayView"]):
         if self.view is not None:
             banner = await track.create_banner(self.view.payload.bot.session)
             await interaction.response.edit_message(
-                embed=banner.embed.set_footer(text=f"{track.title}\nby {track.uploader}"),
+                embed=banner.embed.set_footer(
+                    text=f"{track.title}\nby {track.uploader}"
+                ),
                 attachments=[banner.file()],
                 view=self.view,
             )
@@ -124,6 +148,7 @@ class PlayView(BaseMusicView):
 
     @classmethod
     async def display(cls, payload: Payload, queue: Queue, query: str):
+        s = perf_counter()
         items = await YTDL.from_query(
             query, session=payload.bot.session, api_key=payload.bot.conf.env["YOUTUBE"]
         )
@@ -132,6 +157,7 @@ class PlayView(BaseMusicView):
         text = f"{head.title}\nby {head.uploader}"
         if isinstance(head, BasePlaylist):
             text += f"\n{len(head.entries)} tracks"
+        logger.info(f"Banner created in {perf_counter()-s}s!")
         await payload.interaction.followup.send(
             embed=banner.embed.set_footer(text=text),
             file=banner.file(),
@@ -198,8 +224,10 @@ class Music(commands.Cog):
     @app_commands.command()
     async def play(self, iact: Interaction, query: str):
         """Play a song or playlist from YouTube"""
+        s = perf_counter()
         await iact.response.defer()
         payload = await Payload.validate(self.bot, iact)
+        logger.info(f"Validation finished in {perf_counter()-s}s...")
         queue = self.get_queue(payload)
         await PlayView.display(payload, queue, query)
 

@@ -1,15 +1,15 @@
 from __future__ import annotations
+
 import asyncio
 from collections import deque
-from typing import Optional, Union
+from typing import Any, Optional, Union, cast
 
 from ..bot import Bot
-from .track import BasePlaylist, BaseTrack
-from .errors import NoVoiceException, UnknownTrackException
 from ..protocols import GuildMessageable
-from .audio import Voice, Audio
+from .audio import Audio, Voice
+from .errors import NoVoiceException, UnknownTrackException
+from .track import BasePlaylist, BaseTrack
 from .ytdl import YTDL
-from typing import cast, Any
 
 
 class Queue(asyncio.Queue[BaseTrack]):

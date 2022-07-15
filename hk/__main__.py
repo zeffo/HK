@@ -6,8 +6,7 @@ from .bot import Bot
 from .settings import Config
 
 logger = logging.getLogger("discord")
-logger.setLevel(logging.ERROR)
-logging.getLogger("discord.http").setLevel(logging.INFO)
+logger.setLevel(logging.INFO)
 
 handler = logging.handlers.RotatingFileHandler(
     filename="discord.log",

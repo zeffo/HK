@@ -1,6 +1,7 @@
 import asyncio
 from logging import getLogger
 from re import compile
+from time import perf_counter
 from typing import Any, Dict, Union
 
 from aiohttp import ClientSession
@@ -10,6 +11,8 @@ from .errors import UnknownTrackException
 from .track import APIItem, APIResult, BasePlaylist, BaseTrack, Track
 
 __all__ = ("YTDL",)
+
+logger = getLogger("discord")
 
 SEARCH = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&q={0}&type=video&key={1}"
 VIDEO = compile(
@@ -68,13 +71,16 @@ class YTDL(YoutubeDL):
 
     @classmethod
     async def from_query(cls, query: str, *, session: ClientSession, api_key: str):
+        s = perf_counter()
         if match := VIDEO.match(query):
             data = await cls.get_data(match.group(1))
-            return (Track(**data),)
+            ret = (Track(**data),)
         elif PLAYLIST.match(query):
             data = await cls.get_data(query)
-            return (BasePlaylist(**data),)
+            ret = (BasePlaylist(**data),)
         else:
-            return tuple(
+            ret = tuple(
                 (await cls.from_api(query, session=session, api_key=api_key)).partials()
             )
+        logger.info(f"Retrieved item in {perf_counter()-s}s!")
+        return ret

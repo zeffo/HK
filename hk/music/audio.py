@@ -1,9 +1,10 @@
 from asyncio import Event, Lock
 from io import BufferedIOBase
 from typing import Any, Callable, Dict, Optional, Union, cast
-from .track import Track
 
 from discord import AudioSource, FFmpegPCMAudio, PCMVolumeTransformer, VoiceClient
+
+from .track import Track
 
 FFMPEG_OPTS = {
     "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",

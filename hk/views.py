@@ -31,6 +31,7 @@ class Unit:
 
 class Paginator(View):
     """Simple embed and file paginator view"""
+
     def __init__(self, bot: Bot, *items: Unit):
         super().__init__()
         self.bot = bot

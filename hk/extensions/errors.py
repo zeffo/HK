@@ -20,17 +20,22 @@ class Errors(commands.Cog):
         self.hidden = True
         bot.tree.error(self.app_command_error)
 
+    def send(self, interaction: Interaction):
+        if interaction.response.is_done() and isinstance(
+            interaction.channel, GuildMessageable
+        ):
+            return interaction.channel.send
+        else:
+            return interaction.response.send_message
+
     async def app_command_error(self, interaction: Interaction, error: AppCommandError):
-        print(error)
         embed = None
         if isinstance(error, MusicException):
-            embed = Embed(description=error)
-        if embed:
+            embed = Embed(description=str(error))
+
+        if embed is not None:
             embed.color = self.bot.conf.color
-            if not interaction.response.is_done():
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-            else:
-                await interaction.followup.send(embed=embed)
+            return await self.send(interaction)(embed=embed)
 
         elif not isinstance(error, CommandNotFound):
             buffer = StringIO()
@@ -40,12 +45,7 @@ class Errors(commands.Cog):
             buffer.seek(0)
             buffer = BytesIO(buffer.getvalue().encode("utf-8"))
             if isinstance(interaction.channel, GuildMessageable):
-                send = (
-                    interaction.response.send_message
-                    if not interaction.response.is_done()
-                    else interaction.channel.send
-                )
-                await send(
+                await self.send(interaction)(
                     "Observation: I seem to have ran into a problem.",
                     file=File(buffer, "traceback.txt"),
                 )
