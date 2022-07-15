@@ -23,6 +23,7 @@ class UpdaterTask:
     async def updater(self) -> None:
         while True:
             await asyncio.sleep(self.buffer)
+            await self.queue.voice.resumed.wait()   # only update when a track is playing
             embed = self.message.embeds[0]
             embed.set_footer(text=self.queue.progress)
             try:
@@ -41,7 +42,6 @@ class UpdaterTask:
         finally:
             self.task.cancel()
 
-
 class Queue(asyncio.Queue[BaseTrack]):
     def __init__(self, bot: Bot, *, bound: GuildMessageable):
         super().__init__()
@@ -51,6 +51,7 @@ class Queue(asyncio.Queue[BaseTrack]):
         self.loop = asyncio.get_running_loop()
         self.bot = bot
         self.updater_tasks: List[UpdaterTask] = []
+        self.repeating = False
 
     async def next(self) -> Any:
         self._cancel_tasks()
@@ -98,6 +99,12 @@ class Queue(asyncio.Queue[BaseTrack]):
         if not self.voice.track and empty:
             await self.next()
 
+    async def get(self):
+        track = await super().get()
+        if self.repeating:
+            await self.put(track)
+        return track
+
     @property
     def progress(self):
         """Returns a string representing the Queue's current state"""
@@ -106,6 +113,14 @@ class Queue(asyncio.Queue[BaseTrack]):
             progress = f"{src.seconds()/60:.2f}/{track.runtime} | {pct}%"
             if self.voice.is_paused():
                 progress += "\nPaused"
+            if self.repeating:
+                progress += "\nLooping"
             return f"Now Playing\n{track.title}\n{progress}"
         else:
             return f"The Queue is empty :("
+
+    def repeat(self):
+        self.repeating = not self.repeating
+        if track := self.voice.track:
+            self.put_nowait(track)
+        return self.repeating

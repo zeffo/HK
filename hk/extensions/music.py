@@ -320,6 +320,14 @@ class Music(commands.Cog):
         tasks = [payload.user.move_to(vc) for vc in payload.guild.voice_channels]
         asyncio.gather(*tasks)
 
+    @app_commands.command()
+    async def loop(self, iact: Interaction):
+        """Toggles track looping for the guild's queue"""
+        payload = await Payload.validate(self.bot, iact)
+        queue = self.get_queue(payload)
+        text = f"Looping is now {'on' if queue.repeat() else 'off'}!"
+        await iact.response.send_message(embed=Embed(description=text, color=self.bot.conf.color))
+
 
 async def setup(bot: Bot):
     await bot.add_cog(Music(bot))

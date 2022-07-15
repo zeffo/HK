@@ -55,6 +55,7 @@ class Voice(VoiceClient):
         self.track = track
         src = Audio(track.url, volume=self._volume)
         super().play(src, after=self._wrap_next(after))
+        self.resumed.set()
 
     def pause(self) -> None:
         self.resumed.clear()

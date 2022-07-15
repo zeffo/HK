@@ -77,6 +77,19 @@ class Banner:
         return (d, d, d)
 
     @staticmethod
+    def to_ascii(s: str):
+        """Removes words containing no-ascii chars"""
+        res = []
+        for word in s.split():
+            try:
+                word.encode('ascii')
+            except UnicodeEncodeError:
+                continue
+            else:
+                res.append(word)
+        return " ".join(res)
+
+    @staticmethod
     def generate(
         track: ThumbnailMixin,
         buffer: BytesIO,
@@ -99,7 +112,8 @@ class Banner:
         pen = ImageDraw.Draw(gradient)
         _normal = ImageFont.truetype(normal, 20)
         _bold = ImageFont.truetype(bold, 40)
-        title = "\n".join(wrap(track.title, 24, max_lines=2))
+        title = Banner.to_ascii(track.title)
+        title = "\n".join(wrap(title, 24, max_lines=2))    
         uploader = "By " + track.uploader
         start = tx + gap
         tbox = pen.multiline_textbbox((start, gap), title, font=_bold, spacing=20)
