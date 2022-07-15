@@ -125,8 +125,8 @@ class Banner:
     async def create(cls, track: ThumbnailMixin, *, session: ClientSession):
         if banner := cache.get(track.id):
             return banner
-        async with session.get(track.get_thumbnail()) as resp:
-            buffer = BytesIO(await resp.content.read())
+        resp = await session.get(track.get_thumbnail())
+        buffer = BytesIO(await resp.content.read())
         return await asyncio.to_thread(Banner.generate, track, buffer)
 
 
