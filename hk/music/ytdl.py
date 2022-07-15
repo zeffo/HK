@@ -1,7 +1,6 @@
 import asyncio
 from logging import getLogger
 from re import compile
-from time import perf_counter
 from typing import Any, Dict, Union
 
 from aiohttp import ClientSession
@@ -71,7 +70,6 @@ class YTDL(YoutubeDL):
 
     @classmethod
     async def from_query(cls, query: str, *, session: ClientSession, api_key: str):
-        s = perf_counter()
         if match := VIDEO.match(query):
             data = await cls.get_data(match.group(1))
             ret = (Track(**data),)
@@ -82,5 +80,4 @@ class YTDL(YoutubeDL):
             ret = tuple(
                 (await cls.from_api(query, session=session, api_key=api_key)).partials()
             )
-        logger.info(f"Retrieved item in {perf_counter()-s}s!")
         return ret

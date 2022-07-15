@@ -1,6 +1,5 @@
 import asyncio
 from logging import getLogger
-from time import perf_counter
 from typing import Any, Dict, Optional, Union, cast
 
 from discord import (
@@ -148,7 +147,6 @@ class PlayView(BaseMusicView):
 
     @classmethod
     async def display(cls, payload: Payload, queue: Queue, query: str):
-        s = perf_counter()
         items = await YTDL.from_query(
             query, session=payload.bot.session, api_key=payload.bot.conf.env["YOUTUBE"]
         )
@@ -157,7 +155,6 @@ class PlayView(BaseMusicView):
         text = f"{head.title}\nby {head.uploader}"
         if isinstance(head, BasePlaylist):
             text += f"\n{len(head.entries)} tracks"
-        logger.info(f"Banner created in {perf_counter()-s}s!")
         await payload.interaction.followup.send(
             embed=banner.embed.set_footer(text=text),
             file=banner.file(),
@@ -224,10 +221,8 @@ class Music(commands.Cog):
     @app_commands.command()
     async def play(self, iact: Interaction, query: str):
         """Play a song or playlist from YouTube"""
-        s = perf_counter()
         await iact.response.defer()
         payload = await Payload.validate(self.bot, iact)
-        logger.info(f"Validation finished in {perf_counter()-s}s...")
         queue = self.get_queue(payload)
         await PlayView.display(payload, queue, query)
 
