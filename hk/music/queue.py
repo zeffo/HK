@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 from collections import deque
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, Union, cast, List
+from discord import Message
 
 from ..bot import Bot
 from ..protocols import GuildMessageable
@@ -10,6 +11,35 @@ from .audio import Audio, Voice
 from .errors import NoVoiceException, UnknownTrackException
 from .track import BasePlaylist, BaseTrack
 from .ytdl import YTDL
+
+
+class UpdaterTask:
+    def __init__(self, message: Message, *, queue: Queue, buffer: int = 10):
+        self.message = message
+        self.buffer = buffer
+        self.queue = queue
+        self.task = asyncio.create_task(self.updater())
+
+    async def updater(self) -> None:
+        while True:
+            await asyncio.sleep(self.buffer)
+            embed = self.message.embeds[0]
+            embed.set_footer(text=self.queue.progress)
+            try:
+                await self.message.edit(
+                    embed=embed, attachments=self.message.attachments
+                )
+            except Exception:
+                await self.stop()
+                break
+
+    async def stop(self):
+        try:
+            await self.message.delete()
+        except Exception:
+            pass
+        finally:
+            self.task.cancel()
 
 
 class Queue(asyncio.Queue[BaseTrack]):
@@ -20,8 +50,10 @@ class Queue(asyncio.Queue[BaseTrack]):
         self.bound = bound
         self.loop = asyncio.get_running_loop()
         self.bot = bot
+        self.updater_tasks: List[UpdaterTask] = []
 
     async def next(self) -> Any:
+        self._cancel_tasks()
         try:
             partial = await self.get()
             track = await YTDL.to_track(partial)
@@ -30,12 +62,19 @@ class Queue(asyncio.Queue[BaseTrack]):
         await self.voice.play(track, after=self._next)
 
         banner = await track.create_banner(self.bot.session)
-        await self.bound.send(
+        message = await self.bound.send(
             embed=banner.embed.set_footer(text=self.progress), file=banner.file()
         )
+        self.add_updater(message)
 
     def _next(self, exception: Optional[Exception] = None):
         self.loop.create_task(self.next())
+
+    def _cancel_tasks(self):
+        asyncio.gather(*[task.stop() for task in self.updater_tasks])
+
+    def add_updater(self, message: Message):
+        self.updater_tasks.append(UpdaterTask(message, queue=self))
 
     @property
     def voice(self):

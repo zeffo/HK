@@ -252,9 +252,11 @@ class Music(commands.Cog):
         """Skip the current track"""
         payload = await Payload.validate(self.bot, iact)
         queue = self.get_queue(payload)
-        if to >= queue.qsize():
+        if to > queue.qsize():
             embed = Embed(
-                description=f"There are only {queue.qsize()} tracks in the queue!",
+                description=f"There are only {queue.qsize()} tracks in the queue!"
+                if not queue.empty()
+                else "The queue is empty!",
                 color=self.bot.conf.color,
             )
         elif np := queue.voice.track:
@@ -285,12 +287,10 @@ class Music(commands.Cog):
         if track := queue.voice.track:
             banner = await track.create_banner(self.bot.session)
             await iact.response.send_message(
-                embed=banner.embed.set_footer(
-                    text=f"Now Playing\n{track.title}\n{queue.progress}"
-                ),
+                embed=banner.embed.set_footer(text=queue.progress),
                 file=banner.file(),
             )
-            # TODO: Duration Update Task
+            queue.add_updater(await iact.original_message())
         else:
             await iact.response.send_message(
                 embed=Embed(
