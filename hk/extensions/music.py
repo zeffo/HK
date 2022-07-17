@@ -14,7 +14,7 @@ from discord import (
 from discord.ext import commands
 from discord.ui import Button, Select, View
 from discord.utils import MISSING
-
+from dataclasses import dataclass
 from hk.music.errors import NoVoiceException
 
 from ..bot import Bot
@@ -32,26 +32,16 @@ from ..views import Paginator, Unit
 
 logger = getLogger("discord")
 
-
+@dataclass
 class Payload:
     """Holds data required for most music functions"""
 
-    def __init__(
-        self,
-        *,
-        bot: Bot,
-        guild: Guild,
-        voice_client: Voice,
-        user: Member,
-        channel: GuildMessageable,
-        interaction: Interaction,
-    ):
-        self.bot = bot
-        self.guild = guild
-        self.voice_client = voice_client
-        self.channel = channel
-        self.user = user
-        self.interaction = interaction
+    bot: Bot
+    guild: Guild
+    voice_client: Voice
+    user: Member
+    channel: GuildMessageable
+    interaction: Interaction
 
     @classmethod
     async def validate(cls, bot: Bot, iact: Interaction):
