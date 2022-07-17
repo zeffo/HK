@@ -1,4 +1,4 @@
-import asyncio
+
 from logging import getLogger
 from typing import Any, Dict, Optional, Union, cast
 
@@ -312,13 +312,7 @@ class Music(commands.Cog):
             )
         )
 
-    @app_commands.command()
-    async def boing(self, iact: Interaction, target: Member):
-        """Boings the target across all the voice channels in the guild."""
-        await iact.response.send_message(f"boinging {target.name}")
-        payload = await Payload.validate(self.bot, iact)
-        tasks = [payload.user.move_to(vc) for vc in payload.guild.voice_channels]
-        asyncio.gather(*tasks)
+
 
     @app_commands.command()
     async def loop(self, iact: Interaction):

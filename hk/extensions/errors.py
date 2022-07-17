@@ -24,7 +24,7 @@ class Errors(commands.Cog):
         if interaction.response.is_done() and isinstance(
             interaction.channel, GuildMessageable
         ):
-            return interaction.channel.send
+            return interaction.followup.send
         else:
             return interaction.response.send_message
 
