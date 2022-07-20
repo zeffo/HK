@@ -23,7 +23,7 @@ class UpdaterTask:
     async def updater(self) -> None:
         while True:
             await asyncio.sleep(self.buffer)
-            await self.queue.voice.resumed.wait()   # only update when a track is playing
+            await self.queue.voice.resumed.wait()  # only update when a track is playing
             embed = self.message.embeds[0]
             embed.set_footer(text=self.queue.progress)
             try:
@@ -41,6 +41,7 @@ class UpdaterTask:
             pass
         finally:
             self.task.cancel()
+
 
 class Queue(asyncio.Queue[BaseTrack]):
     def __init__(self, bot: Bot, *, bound: GuildMessageable):

@@ -11,3 +11,4 @@ custom/
 test.py
 tests/*
 pgvolume/
+ext/

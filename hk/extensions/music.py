@@ -1,4 +1,3 @@
-
 from logging import getLogger
 from typing import Any, Dict, Optional, Union, cast
 
@@ -31,6 +30,7 @@ from ..protocols import GuildMessageable
 from ..views import Paginator, Unit
 
 logger = getLogger("discord")
+
 
 @dataclass
 class Payload:
@@ -302,15 +302,15 @@ class Music(commands.Cog):
             )
         )
 
-
-
     @app_commands.command()
     async def loop(self, iact: Interaction):
         """Toggles track looping for the guild's queue"""
         payload = await Payload.validate(self.bot, iact)
         queue = self.get_queue(payload)
         text = f"Looping is now {'on' if queue.repeat() else 'off'}!"
-        await iact.response.send_message(embed=Embed(description=text, color=self.bot.conf.color))
+        await iact.response.send_message(
+            embed=Embed(description=text, color=self.bot.conf.color)
+        )
 
 
 async def setup(bot: Bot):

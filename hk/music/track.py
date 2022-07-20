@@ -36,10 +36,8 @@ class ThumbnailMixin:
         return await Banner.create(self, session=session)
 
 
-cache: Dict[str, Banner] = {}
-
-
 class Banner:
+    cache: Dict[str, Banner] = {}
     def __init__(
         self,
         track: ThumbnailMixin,
@@ -54,7 +52,7 @@ class Banner:
         self._embed = Embed(color=Color.from_rgb(*self.background)).set_image(
             url="attachment://track.png"
         )
-        cache[track.id] = self
+        self.cache[track.id] = self
 
     @property
     def embed(self):
@@ -82,7 +80,7 @@ class Banner:
         res = []
         for word in s.split():
             try:
-                word.encode('ascii')
+                word.encode("ascii")
             except UnicodeEncodeError:
                 continue
             else:
@@ -113,7 +111,7 @@ class Banner:
         _normal = ImageFont.truetype(normal, 20)
         _bold = ImageFont.truetype(bold, 40)
         title = Banner.to_ascii(track.title)
-        title = "\n".join(wrap(title, 24, max_lines=2))    
+        title = "\n".join(wrap(title, 24, max_lines=2))
         uploader = "By " + track.uploader
         start = tx + gap
         tbox = pen.multiline_textbbox((start, gap), title, font=_bold, spacing=20)
@@ -137,7 +135,7 @@ class Banner:
 
     @classmethod
     async def create(cls, track: ThumbnailMixin, *, session: ClientSession):
-        if banner := cache.get(track.id):
+        if banner := cls.cache.get(track.id):
             return banner
         resp = await session.get(track.get_thumbnail())
         buffer = BytesIO(await resp.content.read())
