@@ -312,6 +312,17 @@ class Music(commands.Cog):
             embed=Embed(description=text, color=self.bot.conf.color)
         )
 
+    @app_commands.command()
+    async def search(self, iact: Interaction, query: str):
+        """Search for a track or playlist on YouTube"""
+        await iact.response.defer()
+        session = self.bot.session
+        res = await YTDL.from_query(query, session=session, api_key=self.bot.conf.env['YOUTUBE'])
+        item = res[0]
+        banner = await item.create_banner(session=session)
+        await iact.followup.send(embed=banner.embed, file=banner.file())
+
+
 
 async def setup(bot: Bot):
     await bot.add_cog(Music(bot))
