@@ -313,8 +313,8 @@ class Music(commands.Cog):
         )
 
     @app_commands.command()
-    async def search(self, iact: Interaction, query: str):
-        """Search for a track or playlist on YouTube"""
+    async def banner(self, iact: Interaction, query: str):
+        """Creates a banner for a track or playlist"""
         await iact.response.defer()
         session = self.bot.session
         res = await YTDL.from_query(query, session=session, api_key=self.bot.conf.env['YOUTUBE'])
