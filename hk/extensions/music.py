@@ -317,11 +317,12 @@ class Music(commands.Cog):
         """Creates a banner for a track or playlist"""
         await iact.response.defer()
         session = self.bot.session
-        res = await YTDL.from_query(query, session=session, api_key=self.bot.conf.env['YOUTUBE'])
+        res = await YTDL.from_query(
+            query, session=session, api_key=self.bot.conf.env["YOUTUBE"]
+        )
         item = res[0]
         banner = await item.create_banner(session=session)
         await iact.followup.send(embed=banner.embed, file=banner.file())
-
 
 
 async def setup(bot: Bot):

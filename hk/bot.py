@@ -38,6 +38,7 @@ class Bot(commands.Bot):
             guild = self.get_guild(guild) or Object(guild)
             self.tree.copy_global_to(guild=guild)
             synced = await self.tree.sync(guild=guild)
-            print(
-                f"Synced {len(synced)} command(s) to {getattr(guild, 'name', guild.id)}"
-            )
+        else:
+            synced = await self.tree.sync()
+
+        print(f"Synced {len(synced)} command(s)!")

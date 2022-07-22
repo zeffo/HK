@@ -38,6 +38,7 @@ class ThumbnailMixin:
 
 class Banner:
     cache: Dict[str, Banner] = {}
+
     def __init__(
         self,
         track: ThumbnailMixin,
