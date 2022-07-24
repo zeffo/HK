@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from aiohttp import ClientSession
-from discord import Intents, Object
+from discord import Intents
 from discord.ext import commands
 
 from . import Config
@@ -34,11 +34,5 @@ class Bot(commands.Bot):
         for ex in self.conf.extensions:
             await self.load_extension(ex)
 
-        for guild in self.conf.debug_guilds or []:
-            guild = self.get_guild(guild) or Object(guild)
-            self.tree.copy_global_to(guild=guild)
-            synced = await self.tree.sync(guild=guild)
-        else:
-            synced = await self.tree.sync()
-
+        synced = await self.tree.sync()
         print(f"Synced {len(synced)} command(s)!")
