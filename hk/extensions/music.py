@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from logging import getLogger
 from typing import Any, Dict, Optional, Union, cast
 
@@ -13,7 +14,7 @@ from discord import (
 from discord.ext import commands
 from discord.ui import Button, Select, View
 from discord.utils import MISSING
-from dataclasses import dataclass
+
 from hk.music.errors import NoVoiceException
 
 from ..bot import Bot

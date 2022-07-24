@@ -1,3 +1,2 @@
-from __future__ import annotations
-
-from .settings import *
+__version__ = "1.0.0"
+__author__ = "Aman Phatak"

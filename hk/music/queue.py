@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 from collections import deque
-from typing import Any, Optional, Union, cast, List
+from typing import Any, List, Optional, Union, cast
+
 from discord import Message
 
 from ..bot import Bot
