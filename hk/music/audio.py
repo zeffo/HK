@@ -1,6 +1,6 @@
 from asyncio import Event, Lock
 from io import BufferedIOBase
-from typing import Any, Callable, Dict, Optional, Union, cast
+from typing import Any, Callable, Optional, cast
 
 from discord import AudioSource, FFmpegPCMAudio, PCMVolumeTransformer, VoiceClient
 
@@ -17,10 +17,10 @@ class Audio(PCMVolumeTransformer[AudioSource]):
 
     def __init__(
         self,
-        stream: Union[str, BufferedIOBase],
+        stream: str | BufferedIOBase,
         volume: float = 0.5,
         *,
-        opts: Dict[str, str] = FFMPEG_OPTS
+        opts: dict[str, str] = FFMPEG_OPTS
     ):
         source = FFmpegPCMAudio(stream, **opts)
         super().__init__(source, volume)
@@ -39,11 +39,11 @@ class Voice(VoiceClient):
         super().__init__(*args, **kwargs)
         self.lock = Lock()
         self.resumed = Event()
-        self.track: Optional[Track] = None
+        self.track: Track | None = None
         self._volume: float = 0.5
 
     def _wrap_next(self, fn: Callable[..., Any]):
-        def inner(ex: Optional[Exception] = None):
+        def inner(ex: Exception | None = None):
             self.lock.release()
             self.resumed.clear()
             fn(ex)

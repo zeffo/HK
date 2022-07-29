@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import List, Optional
+from typing import Optional
 
 from discord import ButtonStyle, Embed, File, Interaction
 from discord.ui import Button, View, button
@@ -17,7 +17,7 @@ class Unit:
         *,
         content: Optional[str] = None,
         embed: Optional[Embed] = None,
-        files: Optional[List[File]] = None,
+        files: Optional[list[File]] = None,
     ):
         self.content = content
         self.embed = embed
