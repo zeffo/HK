@@ -5,7 +5,7 @@ description = ""
 authors = ["zeffo <phatakaman@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.9"
 "discord.py" = {git = "https://github.com/Rapptz/discord.py"}
 PyYAML = "^6.0"
 pydantic = "^1.9.0"
