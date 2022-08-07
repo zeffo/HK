@@ -34,7 +34,7 @@ class Config(BaseModel):
     )
     prefix: str = "hk "
     intents: int = 131071
-    extensions: List[str] = ["jishaku"]
+    extensions: List[str] = []
     env: EnvVars
 
     def __init__(self, fp: Optional[str] = None):
