@@ -46,6 +46,7 @@ class Voice(VoiceClient):
         def inner(ex: Optional[Exception] = None):
             self.lock.release()
             self.resumed.clear()
+            self.track = None
             fn(ex)
 
         return inner

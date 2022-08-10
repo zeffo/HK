@@ -325,6 +325,15 @@ class Music(commands.Cog):
         banner = await item.create_banner(session=session)
         await iact.followup.send(embed=banner.embed, file=banner.file())
 
+    @app_commands.command()
+    async def disconnect(self, iact: Interaction):
+        """Disconnects the bot from the voice channel and resets the queue."""
+        await iact.response.defer()
+        payload = await Payload.validate(self.bot, iact)
+        queue = self.get_queue(payload)
+        await queue.voice.disconnect()
+        del self.queues[payload.guild]
+        await iact.delete_original_message()
 
 async def setup(bot: Bot):
     await bot.add_cog(Music(bot))
