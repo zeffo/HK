@@ -104,7 +104,7 @@ class Queue(asyncio.Queue[BaseTrack]):
     async def get(self):
         track = await super().get()
         if self.repeating:
-            await self.put(track)
+            self.put_nowait(track)
         return track
 
     @property
