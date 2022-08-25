@@ -1,5 +1,5 @@
 *****
-HK-69
+HK
 *****
 
 Multipurpose discord bot for my friends and I
