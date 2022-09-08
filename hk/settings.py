@@ -33,7 +33,7 @@ class Config(BaseModel):
         first="⏮️", stop="⏹️", skip="⏭️", next="➡️", back="⬅️", playpause="⏯️", x="❌"
     )
     prefix: str = "hk "
-    intents: int = 131071
+    intents: int = 3276543
     extensions: List[str] = []
     env: EnvVars
 

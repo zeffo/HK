@@ -97,10 +97,12 @@ class TrackSelect(Select["PlayView"]):
         ]
         options[0].default = True
         super().__init__(options=options)
-        self._selected_values = ["0"]
+
+    def get_value(self):
+        return int(self.values[0]) if self.values else 0
 
     async def callback(self, interaction: Interaction) -> Any:
-        idx = int(self.values[0])
+        idx = self.get_value()
         track = self.items[idx]
         self.options[idx].default = True
         self.options[self.page].default = False
@@ -154,7 +156,7 @@ class PlayView(BaseMusicView):
         )
 
     async def enqueue(self, interaction: Interaction):
-        track = self.select.items[int(self.select.values[0])]
+        track = self.select.items[int(self.select.get_value())]
         if message := interaction.message:
             if (
                 self.queue.empty()
@@ -281,7 +283,7 @@ class Music(commands.Cog):
                 embed=banner.embed.set_footer(text=queue.progress),
                 file=banner.file(),
             )
-            queue.add_updater(await iact.original_message())
+            queue.add_updater(await iact.original_response())
         else:
             await iact.response.send_message(
                 embed=Embed(
@@ -333,7 +335,7 @@ class Music(commands.Cog):
         queue = self.get_queue(payload)
         await queue.voice.disconnect()
         del self.queues[payload.guild]
-        await iact.delete_original_message()
+        await iact.delete_original_response()
 
 async def setup(bot: Bot):
     await bot.add_cog(Music(bot))
