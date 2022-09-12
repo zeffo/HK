@@ -78,7 +78,7 @@ class Banner:
     @staticmethod
     def to_ascii(s: str):
         """Removes words containing non-ascii chars"""
-        res = []
+        res: list[str] = []
         for word in s.split():
             try:
                 word.encode("ascii")
