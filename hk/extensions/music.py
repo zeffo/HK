@@ -283,7 +283,7 @@ class Music(commands.Cog):
                 embed=banner.embed.set_footer(text=queue.progress),
                 file=banner.file(),
             )
-            queue.add_updater(await iact.original_message())
+            queue.add_updater(await iact.original_response())
         else:
             await iact.response.send_message(
                 embed=Embed(
@@ -335,7 +335,7 @@ class Music(commands.Cog):
         queue = self.get_queue(payload)
         await queue.voice.disconnect()
         del self.queues[payload.guild]
-        await iact.delete_original_message()
+        await iact.delete_original_response()
 
 async def setup(bot: Bot):
     await bot.add_cog(Music(bot))
